@@ -1,10 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
+import '/controllers/register.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
 
+  // Validation functions inside RegisterPage class
+  String? validateName(String name) {
+    if (name.isEmpty) {
+      return 'Name is required';
+    }
+    if (name.length > 255) {
+      return 'Name must be less than 255 characters';
+    }
+    return null;
+  }
+
+  String? validateEmail(String email) {
+    if (email.isEmpty) {
+      return 'Email is required';
+    }
+    if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(email)) {
+      return 'Please enter a valid email address';
+    }
+    if (email.length > 255) {
+      return 'Email must be less than 255 characters';
+    }
+    return null;
+  }
+
+  String? validatePassword(String password) {
+    if (password.isEmpty) {
+      return 'Password is required';
+    }
+    if (password.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    final RegisterController registerController = RegisterController();
+
+    Future<void> handleRegister() async {
+      final nameError = validateName(nameController.text);
+      final emailError = validateEmail(emailController.text);
+      final passwordError = validatePassword(passwordController.text);
+
+      if (nameError != null || emailError != null || passwordError != null) {
+        // Show error message using FlutterToast
+        Fluttertoast.showToast(
+          msg: nameError ?? emailError ?? passwordError!,
+          toastLength: Toast.LENGTH_SHORT,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+        return; // Exit if validation fails
+      }
+
+      final result = await registerController.registerUser(
+        name: nameController.text,
+        email: emailController.text,
+        password: passwordController.text,
+      );
+
+      if (result['success']) {
+        // Close the keyboard
+        FocusScope.of(context).unfocus();
+
+        // Show success message using FlutterToast
+        Fluttertoast.showToast(
+          msg: "Registration Successful!",
+          toastLength: Toast.LENGTH_SHORT,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+
+        // Wait for 3 seconds before navigating to login page
+        Future.delayed(Duration(seconds: 3), () {
+          Navigator.pop(context); // Go back to the previous page (login)
+        });
+      } else {
+        // Show error message using FlutterToast
+        Fluttertoast.showToast(
+          msg: "${result['message']}",
+          toastLength: Toast.LENGTH_SHORT,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+    }
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -12,12 +106,12 @@ class RegisterPage extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF003300), // Deep dark green
-              Color(0xFF004d00), // Slightly lighter dark green
-              Color(0xFF006600), // Richer green tone
-              Color(0xFF339933), // Vibrant green at the top
+              Color(0xFF003300),
+              Color(0xFF004d00),
+              Color(0xFF006600),
+              Color(0xFF339933),
             ],
-            stops: [0.0, 0.3, 0.6, 1.0], // Gradient stops to match your pattern
+            stops: [0.0, 0.3, 0.6, 1.0],
           ),
         ),
         child: Center(
@@ -47,8 +141,8 @@ class RegisterPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Name field with icon
                 TextField(
+                  controller: nameController,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.person, color: Colors.black),
                     labelText: 'Name',
@@ -59,8 +153,8 @@ class RegisterPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Email field with icon
                 TextField(
+                  controller: emailController,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.email, color: Colors.black),
                     labelText: 'Email Address',
@@ -72,8 +166,8 @@ class RegisterPage extends StatelessWidget {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
-                // Password field with icon
                 TextField(
+                  controller: passwordController,
                   obscureText: true,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.lock, color: Colors.black),
@@ -85,19 +179,16 @@ class RegisterPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Register button with same width as text fields
                 SizedBox(
-                  width: double.infinity, // Make the button take up the full width
+                  width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Handle register action
-                    },
+                    onPressed: handleRegister, // Call the register logic
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      primary: const Color(0xFF006600), // Deep green
+                      primary: const Color(0xFF006600),
                       onPrimary: Colors.white,
                     ),
                     child: const Text(
@@ -107,9 +198,8 @@ class RegisterPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // "Already have an account? Login here" link
                 Row(
-                  mainAxisSize: MainAxisSize.min, // Minimize the row size to fit both texts closely
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
                       "Already have an account?",
@@ -117,13 +207,12 @@ class RegisterPage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        // Navigate to the LoginPage
-                        Navigator.pop(context); // Going back to the LoginPage
+                        Navigator.pop(context);
                       },
                       child: const Text(
                         "Login here",
                         style: TextStyle(
-                          color: Colors.blue, // Blue color
+                          color: Colors.blue,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
