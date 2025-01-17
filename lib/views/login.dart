@@ -3,14 +3,22 @@ import 'package:flutter/material.dart';
 import 'register.dart';
 import '../controllers/login.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
+  State<LoginPage> createState() => _LoginPageState();
+}
 
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  // State variable to toggle password visibility
+  bool _isPasswordVisible = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -66,16 +74,27 @@ class LoginPage extends StatelessWidget {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
-                // Password field
+                // Password field with visibility icon
                 TextField(
                   controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.lock, color: Colors.black),
+                  obscureText: !_isPasswordVisible, // Control password visibility
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.lock, color: Colors.black),
                     labelText: 'Password',
-                    labelStyle: TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(
+                    labelStyle: const TextStyle(color: Colors.black),
+                    border: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.black,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
                     ),
                   ),
                 ),
@@ -113,7 +132,7 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 // "Don't have an account?" and "Register here" link closely
                 Row(
-                  mainAxisSize: MainAxisSize.min, // Minimize the row size to fit both texts closely
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
                       "Don't have an account?",
@@ -121,7 +140,6 @@ class LoginPage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        // Navigate to the RegisterPage
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const RegisterPage()),
@@ -130,7 +148,7 @@ class LoginPage extends StatelessWidget {
                       child: const Text(
                         "Register here",
                         style: TextStyle(
-                          color: Colors.blue, // Blue color
+                          color: Colors.blue,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

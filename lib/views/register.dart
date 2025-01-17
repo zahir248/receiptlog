@@ -2,11 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import '/controllers/register.dart';
+import 'login.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
-  // Validation functions inside RegisterPage class
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final RegisterController registerController = RegisterController();
+
+  bool _isPasswordVisible = false; // To manage password visibility
+
+  // Validation functions
   String? validateName(String name) {
     if (name.isEmpty) {
       return 'Name is required';
@@ -40,68 +53,63 @@ class RegisterPage extends StatelessWidget {
     return null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-    final RegisterController registerController = RegisterController();
+  Future<void> handleRegister() async {
+    final nameError = validateName(nameController.text);
+    final emailError = validateEmail(emailController.text);
+    final passwordError = validatePassword(passwordController.text);
 
-    Future<void> handleRegister() async {
-      final nameError = validateName(nameController.text);
-      final emailError = validateEmail(emailController.text);
-      final passwordError = validatePassword(passwordController.text);
-
-      if (nameError != null || emailError != null || passwordError != null) {
-        // Show error message using FlutterToast
-        Fluttertoast.showToast(
-          msg: nameError ?? emailError ?? passwordError!,
-          toastLength: Toast.LENGTH_SHORT,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-        return; // Exit if validation fails
-      }
-
-      final result = await registerController.registerUser(
-        name: nameController.text,
-        email: emailController.text,
-        password: passwordController.text,
+    if (nameError != null || emailError != null || passwordError != null) {
+      // Show error message using FlutterToast
+      Fluttertoast.showToast(
+        msg: nameError ?? emailError ?? passwordError!,
+        toastLength: Toast.LENGTH_SHORT,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
       );
-
-      if (result['success']) {
-        // Close the keyboard
-        FocusScope.of(context).unfocus();
-
-        // Show success message using FlutterToast
-        Fluttertoast.showToast(
-          msg: "Registration Successful!",
-          toastLength: Toast.LENGTH_SHORT,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-
-        // Wait for 1 seconds before navigating to login page
-        Future.delayed(Duration(seconds: 1), () {
-          Navigator.pop(context); // Go back to the previous page (login)
-        });
-      } else {
-        // Show error message using FlutterToast
-        Fluttertoast.showToast(
-          msg: "${result['message']}",
-          toastLength: Toast.LENGTH_SHORT,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-      }
+      return; // Exit if validation fails
     }
 
+    final result = await registerController.registerUser(
+      name: nameController.text,
+      email: emailController.text,
+      password: passwordController.text,
+    );
+
+    if (result['success']) {
+      // Close the keyboard
+      FocusScope.of(context).unfocus();
+
+      // Show success message using FlutterToast
+      Fluttertoast.showToast(
+        msg: "Registration Successful!",
+        toastLength: Toast.LENGTH_SHORT,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+
+      // Wait for 1 second before navigating to login page
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pop(context); // Go back to the previous page (login)
+      });
+    } else {
+      // Show error message using FlutterToast
+      Fluttertoast.showToast(
+        msg: "${result['message']}",
+        toastLength: Toast.LENGTH_SHORT,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -168,13 +176,24 @@ class RegisterPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 TextField(
                   controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.lock, color: Colors.black),
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.lock, color: Colors.black),
                     labelText: 'Password',
-                    labelStyle: TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(
+                    labelStyle: const TextStyle(color: Colors.black),
+                    border: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.black,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
                     ),
                   ),
                 ),
@@ -207,7 +226,10 @@ class RegisterPage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginPage()), // Replace with your login page
+                        );
                       },
                       child: const Text(
                         "Login here",

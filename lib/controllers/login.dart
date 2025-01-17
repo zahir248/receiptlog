@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../views/dashboard.dart';
 
@@ -26,8 +27,16 @@ class LoginController {
         final data = json.decode(response.body);
 
         if (data['status'] == 200) {
-          String token = data['token']; // Extract the token
-          String username = data['user']['name']; // Extract user details if needed
+          String username = data['user']['name'];
+          int userId = data['user']['id'];
+
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+
+          // await prefs.setString('username', username);
+          // print("Debug: Username stored in SharedPreferences: $username");
+
+          await prefs.setInt('userId', userId);
+          print("Debug: UserID stored in SharedPreferences: $userId");
 
           Fluttertoast.showToast(
             msg: "Welcome, $username! Login successful",
