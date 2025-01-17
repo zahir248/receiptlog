@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
 
 import 'register.dart';
+import '../controllers/login.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF003300), // Deep dark green
-              Color(0xFF004d00), // Slightly lighter dark green
-              Color(0xFF006600), // Richer green tone
-              Color(0xFF339933), // Vibrant green at the top
+              Color(0xFF003300),
+              Color(0xFF004d00),
+              Color(0xFF006600),
+              Color(0xFF339933),
             ],
-            stops: [0.0, 0.3, 0.6, 1.0], // Gradient stops to match your pattern
           ),
         ),
         child: Center(
@@ -49,8 +52,9 @@ class LoginPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Email field with icon
+                // Email field
                 TextField(
+                  controller: emailController,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.email, color: Colors.black),
                     labelText: 'Email Address',
@@ -62,8 +66,9 @@ class LoginPage extends StatelessWidget {
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
-                // Password field with icon
+                // Password field
                 TextField(
+                  controller: passwordController,
                   obscureText: true,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.lock, color: Colors.black),
@@ -75,19 +80,28 @@ class LoginPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Login button with same width as text fields
+                // Login button
                 SizedBox(
-                  width: double.infinity, // Make the button take up the full width
+                  width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Handle login action
+                      final email = emailController.text.trim();
+                      final password = passwordController.text.trim();
+
+                      if (email.isNotEmpty && password.isNotEmpty) {
+                        LoginController.login(email, password, context);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Please fill in all fields.")),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      primary: const Color(0xFF006600), // Deep green
+                      primary: const Color(0xFF006600),
                       onPrimary: Colors.white,
                     ),
                     child: const Text(

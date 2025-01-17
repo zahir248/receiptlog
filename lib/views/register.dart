@@ -83,8 +83,8 @@ class RegisterPage extends StatelessWidget {
           fontSize: 16.0,
         );
 
-        // Wait for 3 seconds before navigating to login page
-        Future.delayed(Duration(seconds: 3), () {
+        // Wait for 1 seconds before navigating to login page
+        Future.delayed(Duration(seconds: 1), () {
           Navigator.pop(context); // Go back to the previous page (login)
         });
       } else {
