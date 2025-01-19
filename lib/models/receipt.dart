@@ -13,13 +13,14 @@ class Receipt {
     required this.date,
   });
 
-  // Convert JSON to Receipt object
   factory Receipt.fromJson(Map<String, dynamic> json) {
     return Receipt(
       id: json['id'],
       userId: json['user_id'],
       storeName: json['store_name'],
-      totalAmount: (json['total_amount'] as num).toDouble(),
+      totalAmount: (json['total_amount'] is String)
+          ? double.parse(json['total_amount']) // Convert string to double
+          : (json['total_amount'] as num).toDouble(), // Convert num to double
       date: DateTime.parse(json['date']),
     );
   }
@@ -31,7 +32,7 @@ class Receipt {
       'user_id': userId,
       'store_name': storeName,
       'total_amount': totalAmount,
-      'date': date.toIso8601String(),
+      'date': date,
     };
   }
 }
