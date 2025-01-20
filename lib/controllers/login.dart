@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../views/dashboard.dart';
 
 class LoginController {
-  static const String apiUrl = "http://10.0.2.2:8000/api/login";
+  static const String apiUrl = "http://192.168.0.3:8000/api/login";
 
   static Future<void> login(String email, String password, BuildContext context) async {
     try {
@@ -32,9 +32,7 @@ class LoginController {
 
           SharedPreferences prefs = await SharedPreferences.getInstance();
 
-          // await prefs.setString('username', username);
-          // print("Debug: Username stored in SharedPreferences: $username");
-
+          // Store user data in SharedPreferences
           await prefs.setInt('userId', userId);
           print("Debug: UserID stored in SharedPreferences: $userId");
 
@@ -51,10 +49,12 @@ class LoginController {
           // Add a delay of 1 second before navigating to the dashboard
           await Future.delayed(const Duration(seconds: 1));
 
-          // Navigate to Dashboard
+          // Pass the username when navigating to DashboardPage
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DashboardPage()),
+            MaterialPageRoute(
+              builder: (context) => DashboardPage(username: username), // Pass username
+            ),
           );
         } else {
           Fluttertoast.showToast(
@@ -67,7 +67,6 @@ class LoginController {
           );
         }
       } else if (response.statusCode == 401) {
-        // Decode the response body to get the error message
         final data = json.decode(response.body);
         Fluttertoast.showToast(
           msg: data['message'] ?? "Invalid email or password",
@@ -78,7 +77,6 @@ class LoginController {
           fontSize: 16.0,
         );
       } else {
-        // Handle other unexpected errors
         Fluttertoast.showToast(
           msg: "Unexpected error occurred. Status: ${response.statusCode}",
           toastLength: Toast.LENGTH_SHORT,
@@ -89,7 +87,6 @@ class LoginController {
         );
       }
     } catch (e) {
-      // Handle network or parsing errors
       Fluttertoast.showToast(
         msg: "Network error. Check your connection.",
         toastLength: Toast.LENGTH_SHORT,
@@ -100,5 +97,4 @@ class LoginController {
       );
     }
   }
-
 }
