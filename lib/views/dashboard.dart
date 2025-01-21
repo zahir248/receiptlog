@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/receipt.dart';
 import '../controllers/dashboard.dart';
+import '../views/login.dart';
 
 class DashboardPage extends StatefulWidget {
   final String? username;
@@ -140,7 +142,78 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               onTap: () {
-                // Handle log out action
+                // Show confirmation dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false, // Prevent closing the dialog by tapping outside
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.0), // Rounded corners
+                      ),
+                      title: Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.red, size: 30), // Icon for a professional look
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Confirm Logout',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), // Title styling
+                          ),
+                        ],
+                      ),
+                      content: const Text(
+                        'Are you sure you want to log out?',
+                        style: TextStyle(fontSize: 16, color: Colors.black87), // Content styling
+                      ),
+                      actions: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center, // Center the buttons horizontally
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                // Close the dialog
+                                Navigator.of(context).pop();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[300], // Light gray for "Cancel"
+                                foregroundColor: Colors.black, // Black text for contrast
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              child: const Text('Cancel'),
+                            ),
+                            const SizedBox(width: 16), // Space between the buttons
+                            ElevatedButton(
+                              onPressed: () async {
+                                // Clear stored session or user data
+                                SharedPreferences prefs = await SharedPreferences.getInstance();
+                                await prefs.clear(); // Clear all saved preferences
+
+                                // Close the dialog
+                                Navigator.of(context).pop();
+
+                                // Redirect to login page
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => LoginPage()),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red, // Red for "Log Out"
+                                foregroundColor: Colors.white, // White text for contrast
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                              ),
+                              child: const Text('Log Out'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                );
               },
             ),
           ],

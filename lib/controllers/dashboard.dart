@@ -17,7 +17,7 @@ class DashboardController {
 
       // Send API request to fetch receipts
       final response = await http.get(
-        Uri.parse('http://192.168.0.3:8000/api/receipts/$userId'),
+        Uri.parse('http://192.168.0.82:8000/api/receipts/$userId'),
         headers: {'Accept': 'application/json'},
       );
 
