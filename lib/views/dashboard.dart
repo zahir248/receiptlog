@@ -484,34 +484,42 @@ class _DashboardPageState extends State<DashboardPage> {
                                         style: TextStyle(fontSize: 16, color: Colors.black87),
                                       ),
                                       actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop(); // Close dialog
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.grey[300], // Light gray for "Cancel"
-                                            foregroundColor: Colors.black, // Black text for contrast
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8.0),
-                                            ),
+                                        Center(
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,  // Align buttons horizontally to the center
+                                            children: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop(); // Close dialog
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.grey[300], // Light gray for "Cancel"
+                                                  foregroundColor: Colors.black, // Black text for contrast
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(8.0),
+                                                  ),
+                                                ),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              const SizedBox(width: 16.0), // Add some space between the buttons
+                                              ElevatedButton(
+                                                onPressed: () async {
+                                                  await deleteReceipt(receipt.id); // Access the 'id' property of the Receipt object
+                                                  Navigator.of(context).pop(); // Close dialog
+                                                  Navigator.of(context).pop(); // Close bottom sheet after delete
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.red, // Red for "Delete"
+                                                  foregroundColor: Colors.white, // White text for contrast
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(8.0),
+                                                  ),
+                                                ),
+                                                child: const Text('Delete'),
+                                              ),
+                                            ],
                                           ),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            await deleteReceipt(receipt.id); // Access the 'id' property of the Receipt object
-                                            Navigator.of(context).pop(); // Close dialog
-                                            Navigator.of(context).pop(); // Close bottom sheet after delete
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red, // Red for "Log Out"
-                                            foregroundColor: Colors.white, // White text for contrast
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8.0),
-                                            ),
-                                          ),
-                                          child: const Text('Delete'),
-                                        ),
+                                        )
                                       ],
                                       );
                                     },
