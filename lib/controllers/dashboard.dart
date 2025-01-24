@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/receipt.dart';
 
 class DashboardController {
+
   Future<List<Receipt>> fetchReceipts() async {
     try {
       // Get the userId from SharedPreferences
@@ -34,4 +35,5 @@ class DashboardController {
       throw Exception("Error fetching receipts: $e");
     }
   }
+
 }

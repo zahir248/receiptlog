@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../models/receipt.dart';
 import '../controllers/dashboard.dart';
 import '../views/login.dart';
+import '../views/edit_receipt.dart';
 
 class DashboardPage extends StatefulWidget {
   final String? username;
@@ -35,6 +38,47 @@ class _DashboardPageState extends State<DashboardPage> {
 
     // If multiple words, take first letter of first two words
     return (words[0][0] + (words.length > 1 ? words[1][0] : '')).toUpperCase();
+  }
+
+  Future<void> deleteReceipt(int receiptId) async {
+    final url = Uri.parse('http://192.168.0.82:8000/api/receipts/$receiptId');
+
+    final response = await http.delete(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        // Add any necessary authentication headers here
+      },
+    );
+
+    if (response.statusCode == 200) {
+      // Successfully deleted
+      setState(() {
+        receipts.removeWhere((receipt) => receipt.id == receiptId); // Access `id` field here
+      });
+
+      // Show success message with FlutterToast
+      Fluttertoast.showToast(
+        msg: "Receipt deleted successfully!",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+
+      // Navigate to DashboardPage after showing success message
+      await Future.delayed(const Duration(seconds: 1)); // Optional delay to allow the toast to be visible
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => DashboardPage()), // Navigate back to the dashboard
+      );
+    } else {
+      // Handle errors
+      print('Failed to delete receipt: ${response.body}');
+      // You could show an error dialog here if needed
+    }
   }
 
   @override
@@ -331,7 +375,157 @@ class _DashboardPageState extends State<DashboardPage> {
               final formattedDate =
               DateFormat('yyyy-MM-dd').format(receipt.date);
 
-              return Container(
+              return InkWell (
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      builder: (BuildContext context) {
+                        return Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Receipt Options',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.list,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                                title: const Text('View Items'),
+                                onTap: () {
+                                  // Close the modal
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.edit,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                ),
+                                title: const Text('Edit Receipt'),
+                                onTap: () {
+                                  // Close the modal
+                                  Navigator.of(context).pop();
+                                  // Assume you have a EditReceiptPage that takes a receipt as a parameter
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditReceiptPage(receipt: receipt),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.delete,
+                                    color: Colors.red.shade700,
+                                  ),
+                                ),
+                                title: const Text('Delete Receipt'),
+                                onTap: () {
+                                // Show confirmation dialog before deleting
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false, // Prevent closing the dialog by tapping outside
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      backgroundColor: Colors.white, // Set background color to white
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16.0), // Rounded corners
+                                      ),
+                                      title: Row(
+                                        children: [
+                                          Icon(Icons.warning_amber_rounded, color: Colors.red, size: 30), // Icon for a professional look
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            'Confirm Delete',
+                                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), // Title styling
+                                          ),
+                                        ],
+                                      ),
+                                      content: const Text('Are you sure you want to delete this receipt?',
+                                        style: TextStyle(fontSize: 16, color: Colors.black87),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop(); // Close dialog
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey[300], // Light gray for "Cancel"
+                                            foregroundColor: Colors.black, // Black text for contrast
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(8.0),
+                                            ),
+                                          ),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            await deleteReceipt(receipt.id); // Access the 'id' property of the Receipt object
+                                            Navigator.of(context).pop(); // Close dialog
+                                            Navigator.of(context).pop(); // Close bottom sheet after delete
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red, // Red for "Log Out"
+                                            foregroundColor: Colors.white, // White text for contrast
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(8.0),
+                                            ),
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+
+              child: Container(
                 margin: const EdgeInsets.only(bottom: 16.0),
                 child: Card(
                   elevation: 4,
@@ -452,6 +646,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                 ),
+              )
               );
             },
           ),
