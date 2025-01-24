@@ -156,7 +156,7 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
                       const SizedBox(height: 10),
                       // Add the header text here
                       Text(
-                        'Update Receipt',
+                        'Edit Receipt',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 22,
@@ -219,7 +219,7 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
                           ),
                         ),
                         child: const Text(
-                          'Save Changes',
+                          'Update',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,
