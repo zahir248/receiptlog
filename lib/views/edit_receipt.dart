@@ -123,7 +123,7 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
           },
         ),
         title: Text(
-          'Receipt: ${widget.receipt.date.toLocal().toString().split(' ')[0]}',
+          'Edit Receipt: ${widget.receipt.date.toLocal().toString().split(' ')[0]}',
           style: const TextStyle(color: Colors.white),
         ),
       ),
@@ -156,7 +156,7 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
                       const SizedBox(height: 10),
                       // Add the header text here
                       Text(
-                        'Edit Receipt',
+                        'Receipt',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 22,
