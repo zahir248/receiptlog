@@ -54,7 +54,7 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
   }
 
   void _saveReceipt() async {
-    final url = Uri.parse('http://192.168.0.82:8000/api/receipts/${widget.receipt.id}');
+    final url = Uri.parse('http://192.168.0.3:8000/api/receipts/${widget.receipt.id}');
     final response = await http.put(
       url,
       headers: {
@@ -123,7 +123,7 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
           },
         ),
         title: Text(
-          '${widget.receipt.date.toLocal().toString().split(' ')[0]}',
+          'Receipt: ${widget.receipt.date.toLocal().toString().split(' ')[0]}',
           style: const TextStyle(color: Colors.white),
         ),
       ),

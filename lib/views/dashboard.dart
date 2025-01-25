@@ -8,6 +8,7 @@ import '../models/receipt.dart';
 import '../controllers/dashboard.dart';
 import '../views/login.dart';
 import '../views/edit_receipt.dart';
+import '../views/view_item.dart';
 
 class DashboardPage extends StatefulWidget {
   final String? username;
@@ -41,7 +42,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> deleteReceipt(int receiptId) async {
-    final url = Uri.parse('http://192.168.0.82:8000/api/receipts/$receiptId');
+    final url = Uri.parse('http://192.168.0.3:8000/api/receipts/$receiptId');
 
     final response = await http.delete(
       url,
@@ -417,6 +418,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                 onTap: () {
                                   // Close the modal
                                   Navigator.of(context).pop();
+
+                                  // Redirect to the View Items page
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ViewItemsPage(receipt: receipt), // Pass the receipt.id
+                                    ),
+                                  );
                                 },
                               ),
                               const SizedBox(height: 8),
@@ -605,7 +614,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                           fontWeight: FontWeight.bold,
                                           fontSize: 18,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
+                                        overflow: TextOverflow.visible, // Allows wrapping
+                                        softWrap: true,
                                       ),
                                     ),
                                     Container(
