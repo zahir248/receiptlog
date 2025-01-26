@@ -34,7 +34,9 @@ class LoginController {
 
           // Store user data in SharedPreferences
           await prefs.setInt('userId', userId);
-          print("Debug: UserID stored in SharedPreferences: $userId");
+          await prefs.setString('username', username);
+
+          // print("Debug: UserID stored in SharedPreferences: $userId");
 
           Fluttertoast.showToast(
             msg: "Welcome, $username! Login successful",
@@ -53,7 +55,7 @@ class LoginController {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => DashboardPage(username: username), // Pass username
+              builder: (context) => DashboardPage(), // Pass username
             ),
           );
         } else {

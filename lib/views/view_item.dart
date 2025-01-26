@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../views/dashboard.dart';
 import '../models/receipt.dart';
@@ -47,6 +48,111 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
         errorMessage = 'Error: $e';
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> _deleteItem(int receiptId, int itemId, String itemName) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('http://192.168.0.3:8000/api/receipts/$receiptId/items/$itemId'), // Modified URL to include receiptId
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Remove item from local list
+        setState(() {
+          items.removeWhere((item) => item['id'] == itemId);
+        });
+
+        // Show success toast
+        Fluttertoast.showToast(
+          msg: "Item deleted successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
+      } else {
+        // Error handling
+        Fluttertoast.showToast(
+          msg: "Failed to delete item",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "Error: ${e.toString()}",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
+  }
+
+  Future<void> _updateItem({
+    required int receiptId,
+    required int itemId,
+    required String itemName,
+    required int quantity,
+    required double price,
+  }) async {
+    try {
+      final requestBody = jsonEncode({
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+      });
+
+      final url = 'http://192.168.0.3:8000/api/receipts/$receiptId/items/$itemId';
+
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: requestBody,
+      );
+
+      if (response.statusCode == 200) {
+        // Show success message using FlutterToast
+        Fluttertoast.showToast(
+          msg: "Item updated successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      } else {
+        // Show error message using FlutterToast
+        Fluttertoast.showToast(
+          msg: "Failed to update item",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+    } catch (e) {
+      // Show error message for network issue
+      Fluttertoast.showToast(
+        msg: "Error: ${e.toString()}",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
     }
   }
 
@@ -101,7 +207,260 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            return Container(
+
+            return InkWell(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  builder: (BuildContext context) {
+                    return Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Item Options',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.edit,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                            title: const Text('Edit Item'),
+                            onTap: () {
+                              Navigator.of(context).pop(); // Close the modal
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext context) {
+                                  // Pre-fill controllers with existing item data
+                                  TextEditingController itemNameController = TextEditingController(text: item['item_name'] ?? '');
+                                  TextEditingController itemQuantityController = TextEditingController(text: item['quantity']?.toString() ?? '');
+                                  TextEditingController itemPriceController = TextEditingController(
+                                      text: _parsePrice(item['price']).toStringAsFixed(2)
+                                  );
+
+                                  return AlertDialog(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16.0),
+                                    ),
+                                    title: const Text(
+                                      'Edit Item',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,),
+                                    ),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextField(
+                                          controller: itemNameController,
+                                          decoration:  InputDecoration(
+                                            labelText: 'Item Name',
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        TextField(
+                                          controller: itemQuantityController,
+                                          keyboardType: TextInputType.number,
+                                          decoration:  InputDecoration(
+                                            labelText: 'Quantity',
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        TextField(
+                                          controller: itemPriceController,
+                                          keyboardType: TextInputType.numberWithOptions(decimal: true),
+                                          decoration:  InputDecoration(
+                                            labelText: 'Price (RM)',
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    actions: [
+                                      Center(
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop(); // Close the dialog
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.grey[300],
+                                                foregroundColor: Colors.black,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8.0),
+                                                ),
+                                              ),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            const SizedBox(width: 16.0),
+                                            ElevatedButton(
+                                              onPressed: () async {
+                                                // Update item via API
+                                                await _updateItem(
+                                                  receiptId: widget.receipt.id,
+                                                  itemId: item['id'],
+                                                  itemName: itemNameController.text,
+                                                  quantity: int.parse(itemQuantityController.text),
+                                                  price: double.parse(itemPriceController.text),
+                                                );
+
+                                                // Close the dialog and bottom sheet
+                                                Navigator.of(context).pop(); // Close dialog
+
+                                                // Refresh the page by calling setState
+                                                setState(() {
+                                                  fetchReceiptItems();
+                                                });
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.blue,
+                                                foregroundColor: Colors.white,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8.0),
+                                                ),
+                                              ),
+                                              child: const Text('Save'),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.delete,
+                                color: Colors.red.shade700,
+                              ),
+                            ),
+                            title: const Text('Delete Item'),
+                            onTap: () {
+                              // Show confirmation dialog for delete
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16.0),
+                                    ),
+                                    title: Row(
+                                      children: [
+                                        Icon(Icons.warning_amber_rounded, color: Colors.red, size: 30),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'Confirm Delete',
+                                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                    content: const Text(
+                                      'Are you sure you want to delete this item?',
+                                      style: TextStyle(fontSize: 16, color: Colors.black87),
+                                    ),
+                                    actions: [
+                                      Center(
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop(); // Close dialog
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.grey[300],
+                                                foregroundColor: Colors.black,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8.0),
+                                                ),
+                                              ),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            const SizedBox(width: 16.0),
+                                            ElevatedButton(
+                                              onPressed: () async {
+                                                await _deleteItem(
+                                                  widget.receipt.id, // Pass the receiptId as the first argument
+                                                  item['id'],        // Pass the itemId as the second argument
+                                                  item['item_name'], // Pass the itemName as the third argument
+                                                );
+                                                Navigator.of(context).pop(); // Close dialog
+                                                Navigator.of(context).pop(); // Close bottom sheet after delete
+                                              },
+
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                foregroundColor: Colors.white,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8.0),
+                                                ),
+                                              ),
+                                              child: const Text('Delete'),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+
+
+            child: Container(
               margin: const EdgeInsets.only(bottom: 16.0),
               child: Card(
                 elevation: 4,
@@ -213,6 +572,7 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
                   ),
                 ),
               ),
+            )
             );
           },
         ),

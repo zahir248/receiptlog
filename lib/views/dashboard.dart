@@ -23,6 +23,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final DashboardController _controller = DashboardController();
   List<Receipt> receipts = [];
   bool isLoading = true;
+  String? username;
 
   String getInitials(String storeName) {
     if (storeName.isEmpty) return '';
@@ -41,6 +42,14 @@ class _DashboardPageState extends State<DashboardPage> {
     return (words[0][0] + (words.length > 1 ? words[1][0] : '')).toUpperCase();
   }
 
+  // Load the username from SharedPreferences
+  Future<void> _loadUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString('username') ?? ''; // Default to empty string if no username is saved
+    });
+  }
+
   Future<void> deleteReceipt(int receiptId) async {
     final url = Uri.parse('http://192.168.0.3:8000/api/receipts/$receiptId');
 
@@ -48,7 +57,6 @@ class _DashboardPageState extends State<DashboardPage> {
       url,
       headers: {
         'Content-Type': 'application/json',
-        // Add any necessary authentication headers here
       },
     );
 
@@ -86,6 +94,7 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _fetchReceipts();
+    _loadUsername();
   }
 
   Future<void> _fetchReceipts() async {
@@ -111,18 +120,18 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.username != null && widget.username!.isNotEmpty
-              ? '${widget.username}\'s Receipt Record'
+          username != null && username!.isNotEmpty
+              ? '$username\'s Receipt Record'
               : 'Guest\'s Receipt Record', // Default to "Guest's Receipt Record"
-          style: TextStyle(color: Colors.white), // Set the text color to white
+          style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.black, // AppBar background color is black
-        elevation: 0, // Remove shadow to create a seamless blend
+        backgroundColor: Colors.black,
+        elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white), // Set the icon color to white
+            icon: const Icon(Icons.menu, color: Colors.white),
             onPressed: () {
-              Scaffold.of(context).openDrawer(); // Open the drawer when the menu button is clicked
+              Scaffold.of(context).openDrawer();
             },
           ),
         ),
