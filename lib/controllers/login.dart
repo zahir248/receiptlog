@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../views/dashboard.dart';
 
 class LoginController {
-  static const String apiUrl = "http://192.168.0.3:8000/api/login";
+  static const String apiUrl = "http://192.168.0.42:8000/api/login";
 
   static Future<void> login(String email, String password, BuildContext context) async {
     try {
@@ -28,6 +28,8 @@ class LoginController {
 
         if (data['status'] == 200) {
           String username = data['user']['name'];
+          String email = data['user']['email'];
+
           int userId = data['user']['id'];
 
           SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -35,6 +37,7 @@ class LoginController {
           // Store user data in SharedPreferences
           await prefs.setInt('userId', userId);
           await prefs.setString('username', username);
+          await prefs.setString('email', email);
 
           // print("Debug: UserID stored in SharedPreferences: $userId");
 

@@ -9,6 +9,7 @@ import '../controllers/dashboard.dart';
 import '../views/login.dart';
 import '../views/edit_receipt.dart';
 import '../views/view_item.dart';
+import '../views/update_profile.dart';
 
 class DashboardPage extends StatefulWidget {
   final String? username;
@@ -51,7 +52,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> deleteReceipt(int receiptId) async {
-    final url = Uri.parse('http://192.168.0.3:8000/api/receipts/$receiptId');
+    final url = Uri.parse('http://192.168.0.42:8000/api/receipts/$receiptId');
 
     final response = await http.delete(
       url,
@@ -163,14 +164,18 @@ class _DashboardPageState extends State<DashboardPage> {
             ListTile(
               leading: const Icon(Icons.person, color: Colors.white), // Add icon
               title: const Text(
-                'Update Profile',
+                'Edit Profile',
                 style: TextStyle(
                   color: Colors.white, // White text
                   fontSize: 16,
                 ),
               ),
               onTap: () {
-                // Handle profile action
+                // Navigate to the UpdateProfile page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => UpdateProfile()),
+                );
               },
             ),
             ListTile(
