@@ -10,6 +10,7 @@ import '../views/login.dart';
 import '../views/edit_receipt.dart';
 import '../views/view_item.dart';
 import '../views/update_profile.dart';
+import '../views/add_receipt_manual.dart';
 
 class DashboardPage extends StatefulWidget {
   final String? username;
@@ -348,8 +349,11 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: const Text('Enter receipt details manually'),
                       onTap: () {
                         // Handle manual entry
-                        Navigator.pop(context);
-                      },
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => AddReceiptPage()),
+                        );
+                        },
                     ),
                   ],
                 ),

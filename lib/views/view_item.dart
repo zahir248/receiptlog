@@ -26,6 +26,69 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
     fetchReceiptItems();
   }
 
+  Future<void> _createItem({
+    required int receiptId,
+    required String itemName,
+    required int quantity,
+    required double price,
+  }) async {
+    try {
+      final requestBody = jsonEncode({
+        'item_name': itemName,
+        'quantity': quantity,
+        'price': price,
+      });
+
+      final url = 'http://192.168.0.42:8000/api/receipts/$receiptId/items';
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: requestBody,
+      );
+
+      if (response.statusCode == 201) {
+        // Refresh the items list
+        await fetchReceiptItems();
+
+        // Show success message using FlutterToast
+        Fluttertoast.showToast(
+          msg: "Item added successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      } else {
+        // Show error message using FlutterToast
+        Fluttertoast.showToast(
+          msg: "Failed to add item",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+    } catch (e) {
+      // Show error message for network issue
+      Fluttertoast.showToast(
+        msg: "Error: ${e.toString()}",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+    }
+  }
+
   Future<void> fetchReceiptItems() async {
     try {
       final response = await http.get(
@@ -173,6 +236,139 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
           style: const TextStyle(color: Colors.white),
         ),
       ),
+
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        onPressed: () {
+          // Show dialog to add new item
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              // Controllers for input fields
+              TextEditingController itemNameController = TextEditingController();
+              TextEditingController itemQuantityController = TextEditingController();
+              TextEditingController itemPriceController = TextEditingController();
+
+              return AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                title: const Text(
+                  'Add New Item',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: itemNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Item Name',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: itemQuantityController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Quantity',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: itemPriceController,
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Price (RM)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Close the dialog
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[300],
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 16.0),
+                        ElevatedButton(
+                          onPressed: () async {
+                            // Validate inputs
+                            if (itemNameController.text.isEmpty ||
+                                itemQuantityController.text.isEmpty ||
+                                itemPriceController.text.isEmpty) {
+                              Fluttertoast.showToast(
+                                msg: "Please fill in all fields",
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.BOTTOM,
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                              );
+                              return;
+                            }
+
+                            // Create item via API
+                            await _createItem(
+                              receiptId: widget.receipt.id,
+                              itemName: itemNameController.text,
+                              quantity: int.parse(itemQuantityController.text),
+                              price: double.parse(itemPriceController.text),
+                            );
+
+                            // Close the dialog
+                            Navigator.of(context).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                          ),
+                          child: const Text('Add'),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              );
+            },
+          );
+        },
+      ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
