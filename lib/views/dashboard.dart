@@ -11,6 +11,7 @@ import '../views/edit_receipt.dart';
 import '../views/view_item.dart';
 import '../views/update_profile.dart';
 import '../views/add_receipt_manual.dart';
+import '../views/view_report.dart';
 
 class DashboardPage extends StatefulWidget {
   final String? username;
@@ -189,7 +190,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ),
               onTap: () {
-                // Handle settings action
+                // Navigate to the UpdateProfile page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ViewReportPage()),
+                );
               },
             ),
             ListTile(
