@@ -12,6 +12,7 @@ import '../views/view_item.dart';
 import '../views/update_profile.dart';
 import '../views/add_receipt_manual.dart';
 import '../views/view_report.dart';
+import '../views/add_receipt_auto.dart';
 
 class DashboardPage extends StatefulWidget {
   final String? username;
@@ -25,8 +26,10 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final DashboardController _controller = DashboardController();
   List<Receipt> receipts = [];
+  List<Receipt> filteredReceipts = []; // New list for filtered receipts
   bool isLoading = true;
   String? username;
+  final TextEditingController _searchController = TextEditingController(); // Add search controller
 
   String getInitials(String storeName) {
     if (storeName.isEmpty) return '';
@@ -98,6 +101,28 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     _fetchReceipts();
     _loadUsername();
+    _searchController.addListener(_filterReceipts);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose(); // Clean up the controller
+    super.dispose();
+  }
+
+  // Add this method to filter receipts
+  void _filterReceipts() {
+    String searchTerm = _searchController.text.toLowerCase();
+    setState(() {
+      if (searchTerm.isEmpty) {
+        filteredReceipts = List.from(receipts);
+      } else {
+        filteredReceipts = receipts
+            .where((receipt) =>
+            receipt.storeName.toLowerCase().contains(searchTerm))
+            .toList();
+      }
+    });
   }
 
   Future<void> _fetchReceipts() async {
@@ -105,13 +130,13 @@ class _DashboardPageState extends State<DashboardPage> {
       final fetchedReceipts = await _controller.fetchReceipts();
       setState(() {
         receipts = fetchedReceipts;
+        filteredReceipts = fetchedReceipts; // Initialize filtered list
         isLoading = false;
       });
     } catch (e) {
       setState(() {
         isLoading = false;
       });
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -334,8 +359,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: const Text('Take a photo of your receipt'),
                       onTap: () {
                         // Handle camera action
-                        Navigator.pop(context);
-                      },
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => AddReceiptAutoPage()), // Navigate back to the dashboard
+                        );                      },
                     ),
                     const SizedBox(height: 8),
                     ListTile(
@@ -381,7 +408,44 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
-        child: isLoading
+        child: Column(
+            children: [
+        // Add search bar
+        Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search by store name...',
+              prefixIcon: const Icon(Icons.search, color: Colors.green),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                },
+              )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
+        ),
+      ),
+      Expanded(
+      child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : receipts.isEmpty
             ? const Center(
@@ -393,9 +457,9 @@ class _DashboardPageState extends State<DashboardPage> {
             : Padding(
           padding: const EdgeInsets.all(16.0),
           child: ListView.builder(
-            itemCount: receipts.length,
+            itemCount: filteredReceipts.length,
             itemBuilder: (context, index) {
-              final receipt = receipts[index];
+              final receipt = filteredReceipts[index];
               final formattedDate =
               DateFormat('yyyy-MM-dd').format(receipt.date);
 
@@ -693,6 +757,9 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
+      ]
+    )
+      )
     );
   }
 }

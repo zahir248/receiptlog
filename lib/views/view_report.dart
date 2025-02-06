@@ -564,6 +564,7 @@ class _ViewReportPageState extends State<ViewReportPage> {
     );
     return selectedStore;
   }
+
   Widget _buildResetButton() {
     return Container(
       width: 120,

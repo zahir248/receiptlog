@@ -17,13 +17,37 @@ class ViewItemsPage extends StatefulWidget {
 
 class _ViewItemsPageState extends State<ViewItemsPage> {
   List<dynamic> items = [];
+  List<dynamic> filteredItems = []; // New list for filtered items
   bool isLoading = true;
   String errorMessage = '';
+  final TextEditingController _searchController = TextEditingController(); // Add search controller
 
   @override
   void initState() {
     super.initState();
     fetchReceiptItems();
+    _searchController.addListener(_filterItems);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose(); // Clean up the controller
+    super.dispose();
+  }
+
+  // Add this method to filter items
+  void _filterItems() {
+    String searchTerm = _searchController.text.toLowerCase();
+    setState(() {
+      if (searchTerm.isEmpty) {
+        filteredItems = List.from(items);
+      } else {
+        filteredItems = items
+            .where((item) =>
+            item['item_name'].toString().toLowerCase().contains(searchTerm))
+            .toList();
+      }
+    });
   }
 
   Future<void> _createItem({
@@ -98,6 +122,7 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
       if (response.statusCode == 200) {
         setState(() {
           items = json.decode(response.body);
+          filteredItems = items; // Initialize filtered list
           isLoading = false;
         });
       } else {
@@ -382,7 +407,44 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
             ],
           ),
         ),
-        child: isLoading
+        child: Column(
+            children: [
+        // Add search bar
+        Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search by item name...',
+              prefixIcon: const Icon(Icons.search, color: Colors.green),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                },
+              )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
+        ),
+      ),
+      Expanded(
+      child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : errorMessage.isNotEmpty
             ? Center(
@@ -400,9 +462,9 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
         )
             : ListView.builder(
           padding: const EdgeInsets.all(16.0),
-          itemCount: items.length,
+        itemCount: filteredItems.length,
           itemBuilder: (context, index) {
-            final item = items[index];
+            final item = filteredItems[index];
 
             return InkWell(
               onTap: () {
@@ -773,6 +835,9 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
           },
         ),
       ),
+      ]
+    )
+      )
     );
   }
 

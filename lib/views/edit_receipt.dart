@@ -175,19 +175,19 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: _totalAmountController,
-                        keyboardType: TextInputType.number,
-                        enabled: false,  // Makes the TextField non-editable
-                        decoration: InputDecoration(
-                          labelText: 'Total Amount',
-                          prefixText: 'RM ',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      // TextField(
+                      //   controller: _totalAmountController,
+                      //   keyboardType: TextInputType.number,
+                      //   enabled: false,  // Makes the TextField non-editable
+                      //   decoration: InputDecoration(
+                      //     labelText: 'Total Amount',
+                      //     prefixText: 'RM ',
+                      //     border: OutlineInputBorder(
+                      //       borderRadius: BorderRadius.circular(10),
+                      //     ),
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.start,  // Align everything to the start
                         children: [
@@ -201,7 +201,7 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
                               await _selectDate(context); // Opens the date picker
                             },
                             icon: const Icon(
-                              Icons.calendar_month_outlined, // Calendar icon
+                              Icons.calendar_today, // Calendar icon
                               color: Colors.black54, // Icon color
                               size: 28, // Icon size
                             ),
