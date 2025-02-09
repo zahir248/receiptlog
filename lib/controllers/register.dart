@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class RegisterController {
-  final String apiUrl = "http://192.168.0.42:8000/api/register";
+  final String apiUrl = "http://192.168.0.4:8000/api/register";
 
   Future<Map<String, dynamic>> registerUser({
     required String name,

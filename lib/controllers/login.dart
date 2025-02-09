@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../views/dashboard.dart';
 
 class LoginController {
-  static const String apiUrl = "http://192.168.0.42:8000/api/login";
+  static const String apiUrl = "http://192.168.0.4:8000/api/login";
 
   static Future<void> login(String email, String password, BuildContext context) async {
     try {

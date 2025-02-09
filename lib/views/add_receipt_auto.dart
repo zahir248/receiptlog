@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../views/dashboard.dart';
+import '../models/receipt.dart';
+import '../models/receipt_item.dart';
 
 class AddReceiptAutoPage extends StatefulWidget {
+  const AddReceiptAutoPage({Key? key}) : super(key: key);
+
   @override
   _AddReceiptPageState createState() => _AddReceiptPageState();
 }
@@ -12,6 +21,382 @@ class AddReceiptAutoPage extends StatefulWidget {
 class _AddReceiptPageState extends State<AddReceiptAutoPage> {
   File? _receiptImage;
   final ImagePicker _picker = ImagePicker();
+  String _extractedText = '';
+  bool _isProcessing = false;
+  Receipt? _parsedReceipt;
+  List<ReceiptItem> _parsedItems = [];
+  int? _userId; // Store userId here
+
+  // Controllers for editable receipt fields
+  final TextEditingController _storeNameController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _totalAmountController = TextEditingController();
+
+  Future<int?> saveReceipt(Receipt receipt, List<ReceiptItem> items) async {
+    const String baseUrl = 'http://192.168.0.4:8000/api/receipts/auto';
+
+    final Map<String, dynamic> requestData = {
+      'user_id': receipt.userId,
+      'store_name': receipt.storeName,
+      'total_amount': receipt.totalAmount,
+      'date': receipt.date.toIso8601String(),
+      'items': items.map((item) => {
+        'item_name': item.itemName,
+        'quantity': item.quantity,
+        'price': item.price,
+      }).toList(),
+    };
+
+    print('Request URL: $baseUrl');
+    print('Request Headers: {Content-Type: application/json}');
+    print('Request Body: ${jsonEncode(requestData)}');
+
+    try {
+      final response = await http.post(
+        Uri.parse(baseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(requestData),
+      );
+
+      print('Response Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+
+        Fluttertoast.showToast(
+          msg: "Receipt saved successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+
+        return responseData['receipt_id'];
+      } else {
+        Fluttertoast.showToast(
+          msg: "Failed to save receipt: ${response.statusCode}",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+
+        return null; // Don't throw an error, just return null
+      }
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "Error saving receipt: $e",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+
+      return null; // Don't throw an error, just return null
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserId(); // Fetch userId when the widget is initialized
+  }
+
+  @override
+  void dispose() {
+    _storeNameController.dispose();
+    _dateController.dispose();
+    _totalAmountController.dispose();
+    super.dispose();
+  }
+
+  // Update controllers when receipt is parsed
+  void _updateControllers() {
+    if (_parsedReceipt != null) {
+      _storeNameController.text = _parsedReceipt!.storeName;
+      _dateController.text = _parsedReceipt!.date.toString().split(' ')[0];
+      _totalAmountController.text = _parsedReceipt!.totalAmount.toStringAsFixed(2);
+    }
+  }
+
+  // Fetch userId from SharedPreferences
+  Future<void> _fetchUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userId = prefs.getInt('userId'); // Assuming 'userId' is the key used to store the user ID
+    });
+  }
+
+  // Show dialog to edit an item
+  Future<void> _showEditItemDialog(ReceiptItem item, int index) async {
+    TextEditingController nameController = TextEditingController(text: item.itemName);
+    TextEditingController quantityController = TextEditingController(text: item.quantity.toString());
+    TextEditingController priceController = TextEditingController(text: item.price.toStringAsFixed(2));
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Item'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Item Name'),
+              ),
+              TextField(
+                controller: quantityController,
+                decoration: InputDecoration(labelText: 'Quantity'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: priceController,
+                decoration: InputDecoration(labelText: 'Price (RM)'),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _parsedItems[index] = ReceiptItem(
+                  id: item.id,
+                  receiptId: item.receiptId,
+                  itemName: nameController.text,
+                  quantity: int.tryParse(quantityController.text) ?? 1,
+                  price: double.tryParse(priceController.text) ?? 0.0,
+                );
+                _updateTotalAmount();
+              });
+              Navigator.pop(context);
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show dialog to add a new item
+  Future<void> _showAddItemDialog() async {
+    TextEditingController nameController = TextEditingController();
+    TextEditingController quantityController = TextEditingController(text: '1');
+    TextEditingController priceController = TextEditingController(text: '0.00');
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Add New Item'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Item Name'),
+              ),
+              TextField(
+                controller: quantityController,
+                decoration: InputDecoration(labelText: 'Quantity'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: priceController,
+                decoration: InputDecoration(labelText: 'Price (RM)'),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _parsedItems.add(ReceiptItem(
+                  id: _parsedItems.length + 1,
+                  receiptId: -1,
+                  itemName: nameController.text,
+                  quantity: int.tryParse(quantityController.text) ?? 1,
+                  price: double.tryParse(priceController.text) ?? 0.0,
+                ));
+                _updateTotalAmount();
+              });
+              Navigator.pop(context);
+            },
+            child: Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Update total amount based on items
+  void _updateTotalAmount() {
+    double total = _parsedItems.fold(0, (sum, item) => sum + (item.price * item.quantity));
+    _totalAmountController.text = total.toStringAsFixed(2);
+    if (_parsedReceipt != null) {
+      _parsedReceipt = Receipt(
+        id: _parsedReceipt!.id,
+        userId: _parsedReceipt!.userId,
+        storeName: _storeNameController.text,
+        totalAmount: total,
+        date: DateTime.tryParse(_dateController.text) ?? DateTime.now(),
+      );
+    }
+  }
+
+
+  Future<(Receipt?, List<ReceiptItem>)> parseReceiptData(String text) async {
+    if (_userId == null) {
+      return (null, <ReceiptItem>[]);
+    }
+
+    String storeName = '';
+    DateTime? date;
+    List<ReceiptItem> items = [];
+    List<String> itemNames = [];
+    List<double> prices = [];
+
+    // Split text into lines and remove empty lines
+    List<String> lines = text.split('\n').where((line) => line.trim().isNotEmpty).toList();
+    print("Processing lines: $lines");
+
+    // 1. Extract store name (first line)
+    if (lines.isNotEmpty) {
+      storeName = lines[0].replaceAll(RegExp(r'\([^)]*\)'), '').trim();
+    }
+
+    // 2. First pass: Collect all potential item lines
+    bool startCollectingItems = false;
+    bool isAfterTotal = false;
+
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i].trim();
+
+      // Skip header information until we find the first item
+      if (!startCollectingItems) {
+        if (RegExp(r'^\d{4}').hasMatch(line)) {
+          startCollectingItems = true;
+        } else {
+          continue;
+        }
+      }
+
+      // Stop collecting when we hit total/payment section
+      if (line.toLowerCase().contains('total sales') ||
+          line.toLowerCase().contains('cash') ||
+          line.toLowerCase().contains('change')) {
+        isAfterTotal = true;
+        continue;
+      }
+
+      if (startCollectingItems && !isAfterTotal) {
+        // Match lines starting with 4 digits (item code)
+        RegExp itemPattern = RegExp(r'^(\d{4})\s+(.+)');
+        var match = itemPattern.firstMatch(line);
+        if (match != null) {
+          String itemName = match.group(2)!.trim();
+          // Clean up item name (remove any trailing numbers or special characters)
+          itemName = itemName.replaceAll(RegExp(r'\s+\d+$'), '').trim();
+          itemNames.add(itemName);
+        }
+      }
+
+      // Collect prices (both RM format and plain numbers)
+      if (startCollectingItems) {
+        // Try to match RM format first
+        RegExp rmPricePattern = RegExp(r'RM\s*(\d+\.\d{2})', caseSensitive: false);
+        var rmMatch = rmPricePattern.firstMatch(line);
+        if (rmMatch != null) {
+          double price = double.tryParse(rmMatch.group(1)!) ?? 0.0;
+          if (price > 0) {
+            prices.add(price);
+          }
+        }
+        // Then try plain number format
+        else {
+          RegExp plainPricePattern = RegExp(r'^(\d+\.\d{2})$');
+          var plainMatch = plainPricePattern.firstMatch(line);
+          if (plainMatch != null) {
+            double price = double.tryParse(plainMatch.group(1)!) ?? 0.0;
+            if (price > 0) {
+              prices.add(price);
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Extract date
+    RegExp datePattern = RegExp(r'(\d{2}-\d{2}-\d{2})');
+    for (String line in lines) {
+      var match = datePattern.firstMatch(line);
+      if (match != null) {
+        try {
+          String dateStr = match.group(1)!;
+          List<String> parts = dateStr.split('-');
+          date = DateTime.parse('20${parts[2]}-${parts[1]}-${parts[0]}');
+          break;
+        } catch (e) {
+          print("Error parsing date: $e");
+        }
+      }
+    }
+
+    // 4. Create items by matching names with prices
+    int itemId = 1;
+    double totalAmount = 0.0;  // Initialize total
+
+    // Make sure we have the same number of items and prices
+    int minLength = itemNames.length < prices.length ? itemNames.length : prices.length;
+
+    for (int i = 0; i < minLength; i++) {
+      double price = prices[i];
+      items.add(ReceiptItem(
+        id: itemId++,
+        receiptId: -1,
+        itemName: itemNames[i],
+        quantity: 1,
+        price: price,
+      ));
+      totalAmount += price;  // Add to total
+    }
+
+    // Debug print
+    print("Found items: ${items.map((item) => '${item.itemName}: ${item.price}').toList()}");
+    print("Calculated total: $totalAmount");
+
+    // 5. Create receipt object if valid
+    if (storeName.isNotEmpty && items.isNotEmpty) {
+      Receipt receipt = Receipt(
+        id: -1,
+        userId: _userId!,
+        storeName: storeName,
+        totalAmount: totalAmount,  // Use calculated total
+        date: date ?? DateTime.now(),
+      );
+      return (receipt, items);
+    }
+
+    return (null, <ReceiptItem>[]);
+  }
 
   // Function to pick image from Camera or Gallery
   Future<void> _pickImage(ImageSource source) async {
@@ -20,6 +405,48 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
     if (pickedFile != null) {
       setState(() {
         _receiptImage = File(pickedFile.path);
+        _isProcessing = true;
+        _extractedText = '';
+      });
+
+      // Process the image with ML Kit
+      await _extractTextFromImage();
+    }
+  }
+
+  Future<void> _extractTextFromImage() async {
+    if (_receiptImage == null) return;
+
+    try {
+      final inputImage = InputImage.fromFile(_receiptImage!);
+      final textRecognizer = GoogleMlKit.vision.textRecognizer();
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+
+      String text = '';
+      for (TextBlock block in recognizedText.blocks) {
+        for (TextLine line in block.lines) {
+          text += '${line.text}\n';
+        }
+      }
+
+      // Parse the extracted text into structured data
+      final (receipt, items) = await parseReceiptData(text);
+
+      setState(() {
+        _extractedText = text;
+        _parsedReceipt = receipt;
+        _parsedItems = items;
+        _isProcessing = false;
+      });
+
+      // Add this line to update the controllers with the parsed data
+      _updateControllers();
+
+      await textRecognizer.close();
+    } catch (e) {
+      setState(() {
+        _extractedText = 'Error extracting text: $e';
+        _isProcessing = false;
       });
     }
   }
@@ -56,18 +483,178 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
     );
   }
 
+  Widget _buildParsedReceiptView() {
+    if (_parsedReceipt == null) return SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Editable Store Name
+          TextField(
+            controller: _storeNameController,
+            style: TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: 'Store Name',
+              labelStyle: TextStyle(color: Colors.white70),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white38),
+              ),
+            ),
+          ),
+          // Editable Date
+          TextField(
+            controller: _dateController,
+            style: TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: 'Date (YYYY-MM-DD)',
+              labelStyle: TextStyle(color: Colors.white70),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white38),
+              ),
+            ),
+          ),
+          // Editable Total Amount
+          TextField(
+            controller: _totalAmountController,
+            style: TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: 'Total Amount (RM)',
+              labelStyle: TextStyle(color: Colors.white70),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white38),
+              ),
+            ),
+            readOnly: true, // Total is calculated from items
+          ),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Items:',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: Icon(Icons.add_circle, color: Colors.white),
+                onPressed: _showAddItemDialog,
+                tooltip: 'Add New Item',
+              ),
+            ],
+          ),
+          ..._parsedItems.asMap().entries.map((entry) {
+            int index = entry.key;
+            ReceiptItem item = entry.value;
+            return Padding(
+              padding: EdgeInsets.only(left: 16, top: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${item.quantity}x ${item.itemName} - RM ${item.price.toStringAsFixed(2)}',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.edit, color: Colors.white, size: 20),
+                    onPressed: () => _showEditItemDialog(item, index),
+                    tooltip: 'Edit Item',
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.white, size: 20),
+                    onPressed: () {
+                      setState(() {
+                        _parsedItems.removeAt(index);
+                        _updateTotalAmount();
+                      });
+                    },
+                    tooltip: 'Delete Item',
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () async {
+              if (_parsedReceipt != null && _userId != null) {
+                try {
+                  // Show loading indicator
+                  setState(() {
+                    _isProcessing = true;
+                  });
+
+                  // Update receipt with current values
+                  final updatedReceipt = Receipt(
+                    id: _parsedReceipt!.id,
+                    userId: _userId!,
+                    storeName: _storeNameController.text,
+                    totalAmount: double.tryParse(_totalAmountController.text) ?? 0.0,
+                    date: DateTime.tryParse(_dateController.text) ?? DateTime.now(),
+                  );
+
+                  // Save to backend using the local function
+                  final receiptId = await saveReceipt(updatedReceipt, _parsedItems);
+
+                  // // Show success message
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   SnackBar(
+                  //     content: Text('Receipt saved successfully!'),
+                  //     backgroundColor: Colors.green,
+                  //   ),
+                  // );
+
+                  // Navigate back to dashboard
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => DashboardPage()),
+                  );
+                } catch (e) {
+                  // Show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error saving receipt: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                } finally {
+                  // Hide loading indicator
+                  setState(() {
+                    _isProcessing = false;
+                  });
+                }
+              }
+            },
+            child: Text('Save Receipt'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Add New Receipt',
-          style: TextStyle(color: Colors.white), // AppBar text color
+          style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.black, // AppBar background color
+        backgroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white), // Back button color
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -77,6 +664,8 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
         ),
       ),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -89,25 +678,66 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
             ],
           ),
         ),
-        child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(16),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _receiptImage != null
-                  ? Image.file(_receiptImage!, height: 200)
-                  : Text(
-                "No receipt selected",
-                style: TextStyle(color: Colors.white),
-              ),
+              if (_receiptImage != null) ...[
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(_receiptImage!, height: 200),
+                  ),
+                ),
+                SizedBox(height: 20),
+              ] else
+                Container(
+                  height: 200,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    "No receipt selected",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
               SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: _showImagePickerOptions,
-                icon: Icon(Icons.receipt),
+                icon: Icon(Icons.receipt, color: Colors.blue),
                 label: Text("Add Receipt"),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
                 ),
               ),
+              if (_isProcessing) ...[
+                SizedBox(height: 20),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ],
+              if (!_isProcessing && _extractedText.isNotEmpty && _receiptImage != null) ...[
+                SizedBox(height: 20),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        SizedBox(height: 20),
+                        if (_parsedReceipt != null) _buildParsedReceiptView(),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
