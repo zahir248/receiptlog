@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
+import '../controllers/add_receipt_manual.dart';
 import '../views/dashboard.dart';
 
 class AddReceiptPage extends StatefulWidget {
@@ -15,71 +12,30 @@ class _AddReceiptPageState extends State<AddReceiptPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   DateTime? _selectedDate;
-  int? _userId; // Store user ID from SharedPreferences
+  final ReceiptController _receiptController = ReceiptController();
 
   @override
   void initState() {
     super.initState();
-    _loadUserId();
   }
 
-  Future<void> _loadUserId() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userId = prefs.getInt('userId');
-    });
-    print("Retrieved User ID: $_userId"); // Debug line
-  }
-
-  void _submitForm() async {
-    if (_formKey.currentState!.validate() && _selectedDate != null && _userId != null) {
-      final url = Uri.parse('http://192.168.0.42:8000/api/receipts'); // Update with your API URL
-
-      final requestBody = {
-        'userId': _userId,
-        'store_name': _nameController.text,
-        'date': _selectedDate!.toIso8601String(),
-      };
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+  void _submitForm() {
+    if (_formKey.currentState!.validate() && _selectedDate != null) {
+      _receiptController.submitReceipt(
+        storeName: _nameController.text,
+        date: _selectedDate!,
+        onSuccess: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardPage()),
+          );
         },
-        body: jsonEncode(requestBody),
+        onError: (message) {
+          print(message); // Debugging log
+        },
       );
-
-      if (response.statusCode == 201) {
-        // Show success message using FlutterToast
-        Fluttertoast.showToast(
-          msg: "Receipt Added Successfully",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => DashboardPage()),
-        );
-      } else {
-        // Show error message using FlutterToast
-        Fluttertoast.showToast(
-          msg: "Failed to add receipt",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-      }
     } else {
-      print("Validation failed or User ID is null"); // Debug line
+      print("Validation failed or date not selected"); // Debug log
     }
   }
 
@@ -173,7 +129,8 @@ class _AddReceiptPageState extends State<AddReceiptPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     _selectedDate == null
@@ -184,7 +141,8 @@ class _AddReceiptPageState extends State<AddReceiptPage> {
                                         .split(' ')[0],
                                     style: TextStyle(fontSize: 16),
                                   ),
-                                  Icon(Icons.calendar_today, color: Colors.black54),
+                                  Icon(Icons.calendar_today,
+                                      color: Colors.black54),
                                 ],
                               ),
                             ),
@@ -196,14 +154,16 @@ class _AddReceiptPageState extends State<AddReceiptPage> {
                               onPressed: _submitForm,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
                               child: Text(
                                 'Create',
-                                style: TextStyle(fontSize: 18, color: Colors.white),
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.white),
                               ),
                             ),
                           ),
@@ -216,7 +176,6 @@ class _AddReceiptPageState extends State<AddReceiptPage> {
               ),
             ),
           ),
-        )
-    );
+        ));
   }
 }

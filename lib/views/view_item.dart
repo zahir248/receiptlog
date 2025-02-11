@@ -197,7 +197,7 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
         'price': price,
       });
 
-      final url = 'http://192.168.0.42:8000/api/receipts/$receiptId/items/$itemId';
+      final url = 'http://192.168.0.4:8000/api/receipts/$receiptId/items/$itemId';
 
       final response = await http.put(
         Uri.parse(url),
