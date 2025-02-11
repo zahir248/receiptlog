@@ -54,7 +54,7 @@ class _EditReceiptPageState extends State<EditReceiptPage> {
   }
 
   void _saveReceipt() async {
-    final url = Uri.parse('http://192.168.0.4:8000/api/receipts/${widget.receipt.id}');
+    final url = Uri.parse('http://192.168.0.42:8000/api/receipts/${widget.receipt.id}');
     final response = await http.put(
       url,
       headers: {

@@ -83,7 +83,7 @@ class _ViewReportPageState extends State<ViewReportPage> {
 
   Future<void> fetchReports(int userId) async {
     try {
-      final url = 'http://192.168.0.4:8000/api/reports?user_id=$userId';
+      final url = 'http://192.168.0.42:8000/api/reports?user_id=$userId';
       print("Fetching reports from: $url");
 
       final response = await http.get(Uri.parse(url));

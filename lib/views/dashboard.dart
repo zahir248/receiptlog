@@ -57,7 +57,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> deleteReceipt(int receiptId) async {
-    final url = Uri.parse('http://192.168.0.4:8000/api/receipts/$receiptId');
+    final url = Uri.parse('http://192.168.0.42:8000/api/receipts/$receiptId');
 
     final response = await http.delete(
       url,

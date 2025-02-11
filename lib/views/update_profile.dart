@@ -43,7 +43,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
     // print('Password: $password');
 
     // Backend URL
-    final url = Uri.parse('http://192.168.0.4:8000/api/update-profile');
+    final url = Uri.parse('http://192.168.0.42:8000/api/update-profile');
 
     try {
       final response = await http.post(

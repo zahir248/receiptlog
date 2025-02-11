@@ -63,7 +63,7 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
         'price': price,
       });
 
-      final url = 'http://192.168.0.4:8000/api/receipts/$receiptId/items';
+      final url = 'http://192.168.0.42:8000/api/receipts/$receiptId/items';
 
       final response = await http.post(
         Uri.parse(url),
@@ -116,7 +116,7 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
   Future<void> fetchReceiptItems() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.0.4:8000/api/receipt-items/${widget.receipt.id}'),
+        Uri.parse('http://192.168.0.42:8000/api/receipt-items/${widget.receipt.id}'),
       );
 
       if (response.statusCode == 200) {
@@ -142,7 +142,7 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
   Future<void> _deleteItem(int receiptId, int itemId, String itemName) async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.0.4:8000/api/receipts/$receiptId/items/$itemId'), // Modified URL to include receiptId
+        Uri.parse('http://192.168.0.42:8000/api/receipts/$receiptId/items/$itemId'), // Modified URL to include receiptId
         headers: {
           'Content-Type': 'application/json',
         },
@@ -197,7 +197,7 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
         'price': price,
       });
 
-      final url = 'http://192.168.0.4:8000/api/receipts/$receiptId/items/$itemId';
+      final url = 'http://192.168.0.42:8000/api/receipts/$receiptId/items/$itemId';
 
       final response = await http.put(
         Uri.parse(url),

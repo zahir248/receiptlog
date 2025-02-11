@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:math' show min;
 
 import '../views/dashboard.dart';
 import '../models/receipt.dart';
@@ -33,7 +34,7 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
   final TextEditingController _totalAmountController = TextEditingController();
 
   Future<int?> saveReceipt(Receipt receipt, List<ReceiptItem> items) async {
-    const String baseUrl = 'http://192.168.0.4:8000/api/receipts/auto';
+    const String baseUrl = 'http://192.168.0.42:8000/api/receipts/auto';
 
     final Map<String, dynamic> requestData = {
       'user_id': receipt.userId,
@@ -141,8 +142,17 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
 
     await showDialog(
       context: context,
+      barrierDismissible: false, // Prevent closing the dialog by tapping outside
       builder: (context) => AlertDialog(
-        title: Text('Edit Item'),
+        title: const Text(
+          'Edit Item',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -165,25 +175,45 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _parsedItems[index] = ReceiptItem(
-                  id: item.id,
-                  receiptId: item.receiptId,
-                  itemName: nameController.text,
-                  quantity: int.tryParse(quantityController.text) ?? 1,
-                  price: double.tryParse(priceController.text) ?? 0.0,
-                );
-                _updateTotalAmount();
-              });
-              Navigator.pop(context);
-            },
-            child: Text('Save'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center, // Center the buttons
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[300],
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: Text('Cancel'),
+              ),
+              const SizedBox(width: 16), // Add spacing between buttons
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _parsedItems[index] = ReceiptItem(
+                      id: item.id,
+                      receiptId: item.receiptId,
+                      itemName: nameController.text,
+                      quantity: int.tryParse(quantityController.text) ?? 1,
+                      price: double.tryParse(priceController.text) ?? 0.0,
+                    );
+                    _updateTotalAmount();
+                  });
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: Text('Save'),
+              ),
+            ],
           ),
         ],
       ),
@@ -198,8 +228,17 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
 
     await showDialog(
       context: context,
+      barrierDismissible: false, // Prevent closing the dialog by tapping outside
       builder: (context) => AlertDialog(
-        title: Text('Add New Item'),
+        title: const Text(
+          'Add New Item',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -221,26 +260,47 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
             ],
           ),
         ),
+        actionsAlignment: MainAxisAlignment.center, // Center the buttons
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _parsedItems.add(ReceiptItem(
-                  id: _parsedItems.length + 1,
-                  receiptId: -1,
-                  itemName: nameController.text,
-                  quantity: int.tryParse(quantityController.text) ?? 1,
-                  price: double.tryParse(priceController.text) ?? 0.0,
-                ));
-                _updateTotalAmount();
-              });
-              Navigator.pop(context);
-            },
-            child: Text('Add'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center, // Center the buttons
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[300],
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: Text('Cancel'),
+              ),
+              const SizedBox(width: 16), // Add spacing between buttons
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _parsedItems.add(ReceiptItem(
+                      id: _parsedItems.length + 1,
+                      receiptId: -1,
+                      itemName: nameController.text,
+                      quantity: int.tryParse(quantityController.text) ?? 1,
+                      price: double.tryParse(priceController.text) ?? 0.0,
+                    ));
+                    _updateTotalAmount();
+                  });
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+                child: Text('Add'),
+              ),
+            ],
           ),
         ],
       ),
@@ -262,7 +322,6 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
     }
   }
 
-
   Future<(Receipt?, List<ReceiptItem>)> parseReceiptData(String text) async {
     if (_userId == null) {
       return (null, <ReceiptItem>[]);
@@ -271,88 +330,53 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
     String storeName = '';
     DateTime? date;
     List<ReceiptItem> items = [];
-    List<String> itemNames = [];
-    List<double> prices = [];
+    double totalAmount = 0.0;
+    int itemId = 1;
 
     // Split text into lines and remove empty lines
     List<String> lines = text.split('\n').where((line) => line.trim().isNotEmpty).toList();
     print("Processing lines: $lines");
 
-    // 1. Extract store name (first line)
-    if (lines.isNotEmpty) {
-      storeName = lines[0].replaceAll(RegExp(r'\([^)]*\)'), '').trim();
-    }
+    // Clean and standardize text
+    lines = lines.map((line) =>
+        line.replaceAll('€', '6')  // Common OCR mistake
+            .replaceAll('O', '0')
+            .replaceAll('I', '1')
+            .replaceAll('l', '1')
+            .replaceAll('S.', '5')
+            .trim()
+    ).toList();
 
-    // 2. First pass: Collect all potential item lines
-    bool startCollectingItems = false;
-    bool isAfterTotal = false;
-
-    for (int i = 0; i < lines.length; i++) {
-      String line = lines[i].trim();
-
-      // Skip header information until we find the first item
-      if (!startCollectingItems) {
-        if (RegExp(r'^\d{4}').hasMatch(line)) {
-          startCollectingItems = true;
-        } else {
-          continue;
-        }
-      }
-
-      // Stop collecting when we hit total/payment section
-      if (line.toLowerCase().contains('total sales') ||
-          line.toLowerCase().contains('cash') ||
-          line.toLowerCase().contains('change')) {
-        isAfterTotal = true;
-        continue;
-      }
-
-      if (startCollectingItems && !isAfterTotal) {
-        // Match lines starting with 4 digits (item code)
-        RegExp itemPattern = RegExp(r'^(\d{4})\s+(.+)');
-        var match = itemPattern.firstMatch(line);
-        if (match != null) {
-          String itemName = match.group(2)!.trim();
-          // Clean up item name (remove any trailing numbers or special characters)
-          itemName = itemName.replaceAll(RegExp(r'\s+\d+$'), '').trim();
-          itemNames.add(itemName);
-        }
-      }
-
-      // Collect prices (both RM format and plain numbers)
-      if (startCollectingItems) {
-        // Try to match RM format first
-        RegExp rmPricePattern = RegExp(r'RM\s*(\d+\.\d{2})', caseSensitive: false);
-        var rmMatch = rmPricePattern.firstMatch(line);
-        if (rmMatch != null) {
-          double price = double.tryParse(rmMatch.group(1)!) ?? 0.0;
-          if (price > 0) {
-            prices.add(price);
-          }
-        }
-        // Then try plain number format
-        else {
-          RegExp plainPricePattern = RegExp(r'^(\d+\.\d{2})$');
-          var plainMatch = plainPricePattern.firstMatch(line);
-          if (plainMatch != null) {
-            double price = double.tryParse(plainMatch.group(1)!) ?? 0.0;
-            if (price > 0) {
-              prices.add(price);
-            }
-          }
-        }
+    // 1. Extract store name
+    for (String line in lines) {
+      if (line.toUpperCase().contains('SPEED MART') ||
+          line.toUpperCase().contains('SUPERMART') ||
+          line.toUpperCase().contains('SDN BHD') ||
+          line.toUpperCase().contains('S/B')) {
+        storeName = line.replaceAll(RegExp(r'\([^)]*\)'), '').trim();
+        break;
       }
     }
 
-    // 3. Extract date
-    RegExp datePattern = RegExp(r'(\d{2}-\d{2}-\d{2})');
+    // 2. Extract date
+    RegExp datePattern = RegExp(
+        r'(\d{2}[-/.]\d{2}[-/.]\d{2,4})|(\d{2}[-/.]\d{1,2}[-/.]\d{2,4})',
+        caseSensitive: false
+    );
+
     for (String line in lines) {
       var match = datePattern.firstMatch(line);
       if (match != null) {
         try {
-          String dateStr = match.group(1)!;
+          String dateStr = (match.group(1) ?? match.group(2))!
+              .replaceAll('/', '-')
+              .replaceAll('.', '-');
           List<String> parts = dateStr.split('-');
-          date = DateTime.parse('20${parts[2]}-${parts[1]}-${parts[0]}');
+          if (parts[2].length == 2) {
+            date = DateTime.parse('20${parts[2]}-${parts[1]}-${parts[0]}');
+          } else {
+            date = DateTime.parse('${parts[2]}-${parts[1]}-${parts[0]}');
+          }
           break;
         } catch (e) {
           print("Error parsing date: $e");
@@ -360,36 +384,101 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
       }
     }
 
-    // 4. Create items by matching names with prices
-    int itemId = 1;
-    double totalAmount = 0.0;  // Initialize total
+    // 3. Extract items and prices
+    List<String> itemBuffer = [];
+    List<String> priceBuffer = [];
+    RegExp pricePattern = RegExp(r'(?:RM)?(\d+\.\d{2})', caseSensitive: false);
+    RegExp itemCodePattern = RegExp(r'^\d{4}\s');
+    bool isCollectingItems = false;
 
-    // Make sure we have the same number of items and prices
-    int minLength = itemNames.length < prices.length ? itemNames.length : prices.length;
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i].trim().toUpperCase();
 
+      // Skip known non-item lines
+      if (line.contains('INVOICE') ||
+          line.contains('CASHIER') ||
+          line.contains('TAX') ||
+          line.contains('THANK YOU') ||
+          line.contains('BALANCE') ||
+          line.contains('CREDIT CARD') ||
+          line.contains('DEBIT CARD') ||
+          RegExp(r'^\d{13}$').hasMatch(line)) { // Barcode
+        continue;
+      }
+
+      // Start collecting items when we see an item code or RM
+      if (!isCollectingItems && (itemCodePattern.hasMatch(line) || line.contains('RM'))) {
+        isCollectingItems = true;
+      }
+
+      // Stop collecting when we hit the total section
+      if (line.contains('TOTAL SALES') || line.contains('TOTAL TO PAY')) {
+        isCollectingItems = false;
+        continue;
+      }
+
+      if (isCollectingItems) {
+        // If line contains a price
+        if (pricePattern.hasMatch(line)) {
+          var prices = pricePattern.allMatches(line)
+              .map((m) => double.tryParse(m.group(1) ?? '0') ?? 0.0)
+              .where((price) => price > 0)
+              .toList();
+
+          if (prices.isNotEmpty) {
+            priceBuffer.addAll(prices.map((p) => p.toString()));
+          }
+
+          // Extract item name if it's on the same line
+          String possibleItem = line.replaceAll(pricePattern, '').trim();
+          if (possibleItem.isNotEmpty && !RegExp(r'^[0-9.\s]+$').hasMatch(possibleItem)) {
+            itemBuffer.add(possibleItem);
+          }
+        }
+        // If line doesn't contain a price but might be an item name
+        else if (!RegExp(r'^[0-9.\s]+$').hasMatch(line)) {
+          itemBuffer.add(line);
+        }
+      }
+    }
+
+    // Match items with prices
+    print("Item buffer: $itemBuffer");
+    print("Price buffer: $priceBuffer");
+
+    int minLength = min(itemBuffer.length, priceBuffer.length);
     for (int i = 0; i < minLength; i++) {
-      double price = prices[i];
-      items.add(ReceiptItem(
-        id: itemId++,
-        receiptId: -1,
-        itemName: itemNames[i],
-        quantity: 1,
-        price: price,
-      ));
-      totalAmount += price;  // Add to total
+      String itemName = itemBuffer[i].trim();
+      double price = double.tryParse(priceBuffer[i]) ?? 0.0;
+
+      if (itemName.isNotEmpty && price > 0) {
+        // Clean up item name
+        itemName = itemName.replaceAll(RegExp(r'\d{4}\s+'), '') // Remove item codes
+            .replaceAll(RegExp(r'\s+'), ' ')       // Normalize spaces
+            .trim();
+
+        items.add(ReceiptItem(
+          id: itemId++,
+          receiptId: -1,
+          itemName: itemName,
+          quantity: 1,
+          price: price,
+        ));
+        totalAmount += price;
+      }
     }
 
     // Debug print
     print("Found items: ${items.map((item) => '${item.itemName}: ${item.price}').toList()}");
     print("Calculated total: $totalAmount");
 
-    // 5. Create receipt object if valid
+    // Create receipt object if valid
     if (storeName.isNotEmpty && items.isNotEmpty) {
       Receipt receipt = Receipt(
         id: -1,
         userId: _userId!,
         storeName: storeName,
-        totalAmount: totalAmount,  // Use calculated total
+        totalAmount: totalAmount,
         date: date ?? DateTime.now(),
       );
       return (receipt, items);
@@ -712,7 +801,7 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
               ElevatedButton.icon(
                 onPressed: _showImagePickerOptions,
                 icon: Icon(Icons.receipt, color: Colors.blue),
-                label: Text("Add Receipt"),
+                label: Text("Attach Receipt"),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   backgroundColor: Colors.white,

@@ -33,7 +33,7 @@ class _AddReceiptPageState extends State<AddReceiptPage> {
 
   void _submitForm() async {
     if (_formKey.currentState!.validate() && _selectedDate != null && _userId != null) {
-      final url = Uri.parse('http://192.168.0.4:8000/api/receipts'); // Update with your API URL
+      final url = Uri.parse('http://192.168.0.42:8000/api/receipts'); // Update with your API URL
 
       final requestBody = {
         'userId': _userId,
