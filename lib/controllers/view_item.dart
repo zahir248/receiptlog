@@ -3,9 +3,11 @@ import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 
+import '../config/config.dart';
+
 class ViewItemController {
 
-  static const String baseUrl = 'http://192.168.0.42:8000/api/receipts';
+  static final String baseUrl = '${Config.baseUrl}/receipts';
 
   static Future<bool> createItem({
     required int receiptId,
@@ -15,64 +17,22 @@ class ViewItemController {
     required Function refreshItems,
   }) async {
     try {
-      final requestBody = jsonEncode({
-        'item_name': itemName,
-        'quantity': quantity,
-        'price': price,
-      });
-
-      final url = '$baseUrl/$receiptId/items';
-
       final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: requestBody,
+        Uri.parse('$baseUrl/$receiptId/items'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'item_name': itemName, 'quantity': quantity, 'price': price}),
       );
 
       if (response.statusCode == 201) {
-        // Refresh the items list using the callback
         await refreshItems();
-
-        // Show success message
-        Fluttertoast.showToast(
-          msg: "Item added successfully",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-
+        _showToast("Item added successfully", Colors.green);
         return true;
       } else {
-        // Show error message
-        Fluttertoast.showToast(
-          msg: "Failed to add item",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-
+        _showToast("Failed to add item", Colors.red);
         return false;
       }
     } catch (e) {
-      // Show error message for network issue
-      Fluttertoast.showToast(
-        msg: "Error: ${e.toString()}",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-
+      _showToast("Error: ${e.toString()}", Colors.red);
       return false;
     }
   }
@@ -86,46 +46,19 @@ class ViewItemController {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/$receiptId/items/$itemId'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
-        // Call the callback to update the UI
         onDeleteSuccess(itemId);
-
-        // Show success toast
-        Fluttertoast.showToast(
-          msg: "Item deleted successfully",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-
+        _showToast("Item deleted successfully", Colors.green);
         return true;
       } else {
-        // Error handling
-        Fluttertoast.showToast(
-          msg: "Failed to delete item",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-
+        _showToast("Failed to delete item", Colors.red);
         return false;
       }
     } catch (e) {
-      Fluttertoast.showToast(
-        msg: "Error: ${e.toString()}",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
-
+      _showToast("Error: ${e.toString()}", Colors.red);
       return false;
     }
   }
@@ -139,75 +72,29 @@ class ViewItemController {
     required Function refreshItems,
   }) async {
     try {
-      final requestBody = jsonEncode({
-        'item_name': itemName,
-        'quantity': quantity,
-        'price': price,
-      });
-
-      final url = '$baseUrl/$receiptId/items/$itemId';
-
       final response = await http.put(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: requestBody,
+        Uri.parse('$baseUrl/$receiptId/items/$itemId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'item_name': itemName, 'quantity': quantity, 'price': price}),
       );
 
       if (response.statusCode == 200) {
-        // Call the callback to refresh items
         await refreshItems();
-
-        // Show success message
-        Fluttertoast.showToast(
-          msg: "Item updated successfully",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-
+        _showToast("Item updated successfully", Colors.green);
         return true;
       } else {
-        // Show error message
-        Fluttertoast.showToast(
-          msg: "Failed to update item",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-
+        _showToast("Failed to update item", Colors.red);
         return false;
       }
     } catch (e) {
-      // Show error message for network issue
-      Fluttertoast.showToast(
-        msg: "Error: ${e.toString()}",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-
+      _showToast("Error: ${e.toString()}", Colors.red);
       return false;
     }
   }
 
   static Future<List<dynamic>> fetchReceiptItems(int receiptId) async {
     try {
-
-      final url = Uri.parse('$baseUrl/receipt-items/$receiptId');
-
-      final response = await http.get(url);
-
+      final response = await http.get(Uri.parse('$baseUrl/receipt-items/$receiptId'));
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -218,4 +105,14 @@ class ViewItemController {
     }
   }
 
+  static void _showToast(String message, Color bgColor) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: bgColor,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
+  }
 }

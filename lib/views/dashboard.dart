@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../models/receipt.dart';
 import '../controllers/dashboard.dart';
@@ -95,8 +96,13 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+      Fluttertoast.showToast(
+        msg: "Error: ${e.toString()}",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
       );
     }
   }
@@ -408,7 +414,7 @@ class _DashboardPageState extends State<DashboardPage> {
             : receipts.isEmpty
             ? const Center(
           child: Text(
-            "No receipts found.",
+            "No receipts found",
             style: TextStyle(color: Colors.white, fontSize: 18),
           ),
         )

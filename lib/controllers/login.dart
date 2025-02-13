@@ -5,9 +5,11 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../views/dashboard.dart';
+import '../config/config.dart';
 
 class LoginController {
-  static const String apiUrl = "http://192.168.0.42:8000/api/login";
+
+  static const String apiUrl = '${Config.baseUrl}/login';
 
   static Future<void> login(String email, String password, BuildContext context) async {
     try {

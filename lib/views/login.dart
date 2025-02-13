@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'register.dart';
 import '../controllers/login.dart';
@@ -110,8 +111,13 @@ class _LoginPageState extends State<LoginPage> {
                       if (email.isNotEmpty && password.isNotEmpty) {
                         LoginController.login(email, password, context);
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please fill in all fields.")),
+                        Fluttertoast.showToast(
+                          msg: "Please fill in all fields",
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.BOTTOM,
+                          backgroundColor: Colors.red,
+                          textColor: Colors.white,
+                          fontSize: 16.0,
                         );
                       }
                     },

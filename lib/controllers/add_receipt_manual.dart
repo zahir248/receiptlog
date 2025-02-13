@@ -4,8 +4,10 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/config.dart';
+
 class ReceiptController {
-  Future<int?> getUserId() async {
+  Future<int?> _getUserId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getInt('userId');
   }
@@ -13,52 +15,49 @@ class ReceiptController {
   Future<void> submitReceipt({
     required String storeName,
     required DateTime date,
-    required Function onSuccess,
-    required Function onError,
+    required VoidCallback onSuccess,
+    required Function(String) onError,
   }) async {
-    int? userId = await getUserId();
-    if (userId == null) {
-      onError("User ID is null");
-      return;
+    try {
+      int? userId = await _getUserId();
+      if (userId == null) {
+        onError("User ID is null");
+        return;
+      }
+
+      final url = Uri.parse('${Config.baseUrl}/receipts');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'store_name': storeName,
+          'date': date.toIso8601String(),
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        _showToast("Receipt added successfully", Colors.green);
+        onSuccess();
+      } else {
+        _showToast("Failed to add receipt", Colors.red);
+        onError("Error: ${response.body}");
+      }
+    } catch (e) {
+      _showToast("An error occurred", Colors.red);
+      onError("Exception: $e");
     }
+  }
 
-    final url = Uri.parse('http://192.168.0.42:8000/api/receipts'); // Update with your API URL
-
-    final requestBody = {
-      'userId': userId,
-      'store_name': storeName,
-      'date': date.toIso8601String(),
-    };
-
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode(requestBody),
+  void _showToast(String message, Color bgColor) {
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: bgColor,
+      textColor: Colors.white,
     );
-
-    if (response.statusCode == 201) {
-      Fluttertoast.showToast(
-        msg: "Receipt Added Successfully",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-      onSuccess();
-    } else {
-      Fluttertoast.showToast(
-        msg: "Failed to add receipt",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-      onError("Failed to add receipt");
-    }
   }
 }

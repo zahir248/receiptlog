@@ -3,11 +3,13 @@ import 'package:http/http.dart' as http;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 
+import '../config/config.dart';
 import '../models/receipt.dart';
 import '../models/receipt_item.dart';
 
 class AddReceiptController {
-  static const String baseUrl = 'http://192.168.0.42:8000/api/receipts/auto';
+
+  static final String apiUrl = '${Config.baseUrl}/receipts/auto';
 
   static Future<int?> saveReceipt(Receipt receipt, List<ReceiptItem> items) async {
     final Map<String, dynamic> requestData = {
@@ -22,13 +24,13 @@ class AddReceiptController {
       }).toList(),
     };
 
-    print('Request URL: $baseUrl');
+    print('Request URL: $apiUrl');
     print('Request Headers: {Content-Type: application/json}');
     print('Request Body: ${jsonEncode(requestData)}');
 
     try {
       final response = await http.post(
-        Uri.parse(baseUrl),
+        Uri.parse(apiUrl),
         headers: {
           'Content-Type': 'application/json',
         },

@@ -1,8 +1,11 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import '../config/config.dart';
+
 class RegisterController {
-  final String apiUrl = "http://192.168.0.42:8000/api/register";
+
+  final String apiUrl = '${Config.baseUrl}/register';
 
   Future<Map<String, dynamic>> registerUser({
     required String name,
@@ -29,7 +32,7 @@ class RegisterController {
           return {
             "success": true,
             "data": responseData,
-            "message": responseData['message'] ?? "Registration successful!"
+            "message": responseData['message'] ?? "Registration successful"
           };
         } else {
           return {

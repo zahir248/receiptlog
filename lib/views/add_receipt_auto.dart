@@ -4,6 +4,7 @@ import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:math' show min;
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../views/dashboard.dart';
 import '../models/receipt.dart';
@@ -626,14 +627,16 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
                     MaterialPageRoute(builder: (context) => DashboardPage()),
                   );
                 } catch (e) {
-                  // Show error message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error saving receipt: $e'),
-                      backgroundColor: Colors.red,
-                    ),
+                  Fluttertoast.showToast(
+                    msg: "Error saving receipt: $e",
+                    toastLength: Toast.LENGTH_LONG,
+                    gravity: ToastGravity.BOTTOM,
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white,
+                    fontSize: 16.0,
                   );
-                } finally {
+                }
+                finally {
                   // Hide loading indicator
                   setState(() {
                     _isProcessing = false;

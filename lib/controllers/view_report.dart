@@ -4,9 +4,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
-class ViewReportController {
+import '../config/config.dart';
 
-  final String baseUrl = 'http://192.168.0.42:8000/api';
+class ViewReportController {
 
   Future<int?> getUserId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -15,13 +15,12 @@ class ViewReportController {
 
   Future<List<dynamic>> fetchReports(int userId) async {
     try {
-      final url = '$baseUrl/reports?user_id=$userId';
+      final url = '${Config.baseUrl}/reports?user_id=$userId';
 
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data;
+        return jsonDecode(response.body);
       } else {
         throw Exception("Failed to load reports");
       }
