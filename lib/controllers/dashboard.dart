@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../models/receipt.dart';
+import '../views/dashboard.dart';
 
 class DashboardController {
+
+  static const String baseUrl = 'http://192.168.0.42:8000/api/receipts';
 
   Future<List<Receipt>> fetchReceipts() async {
     try {
@@ -36,4 +41,77 @@ class DashboardController {
     }
   }
 
+  static Future<bool> deleteReceipt(
+      BuildContext context,
+      int receiptId,
+      Function(int) onDeleteSuccess,
+      ) async {
+    final url = Uri.parse('$baseUrl/$receiptId');
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Call the callback to update the UI
+        onDeleteSuccess(receiptId);
+
+        // Show success message
+        Fluttertoast.showToast(
+          msg: "Receipt deleted successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+
+        // Optional delay to show toast
+        await Future.delayed(const Duration(seconds: 1));
+
+        // Navigate to dashboard
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardPage()),
+          );
+        }
+
+        return true;
+      } else {
+        print('Failed to delete receipt: ${response.body}');
+
+        // Show error message
+        Fluttertoast.showToast(
+          msg: "Failed to delete receipt",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+
+        return false;
+      }
+    } catch (e) {
+      print('Error deleting receipt: $e');
+
+      // Show error message
+      Fluttertoast.showToast(
+        msg: "Error deleting receipt: $e",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+
+      return false;
+    }
+  }
 }

@@ -1,7 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -10,6 +7,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'dart:typed_data';
 
 import '../views/dashboard.dart';
+import '../controllers/view_report.dart';
 
 class ViewReportPage extends StatefulWidget {
   @override
@@ -24,6 +22,7 @@ class _ViewReportPageState extends State<ViewReportPage> {
   DateTime? startDate;
   DateTime? endDate;
   TextEditingController searchController = TextEditingController();
+  final ViewReportController _viewReportController = ViewReportController();
 
   @override
   void initState() {
@@ -60,8 +59,7 @@ class _ViewReportPageState extends State<ViewReportPage> {
   }
 
   Future<void> getUserIdAndFetchReports() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int? storedUserId = prefs.getInt('userId');
+    int? storedUserId = await _viewReportController.getUserId();
 
     if (storedUserId == null) {
       Fluttertoast.showToast(
@@ -78,57 +76,26 @@ class _ViewReportPageState extends State<ViewReportPage> {
       userId = storedUserId;
     });
 
-    fetchReports(storedUserId);
-  }
+    List<dynamic> reports = await _viewReportController.fetchReports(storedUserId);
 
-  Future<void> fetchReports(int userId) async {
-    try {
-      final url = 'http://192.168.0.42:8000/api/reports?user_id=$userId';
-      print("Fetching reports from: $url");
+    // Group reports by month-year
+    Map<String, List<dynamic>> groupedByStore = {};
+    for (var report in reports) {
+      String monthYear = report['date'] != null
+          ? DateTime.parse(report['date']).toString().substring(0, 7)
+          : 'Unknown';
 
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-
-        // Store detailed reports for PDF generation
-        setState(() {
-          detailedReports = data;
-        });
-
-        // Group reports by store name for display
-        Map<String, List<dynamic>> groupedByStore = {};
-        for (var report in data) {
-          String monthYear = report['date'] != null
-              ? DateTime.parse(report['date']).toString().substring(0, 7)
-              : 'Unknown';
-
-          if (!groupedByStore.containsKey(monthYear)) {
-            groupedByStore[monthYear] = [];
-          }
-          groupedByStore[monthYear]!.add(report);
-        }
-
-        setState(() {
-          groupedReports = groupedByStore;
-          isLoading = false;
-        });
-      } else {
-        throw Exception("Failed to load reports");
+      if (!groupedByStore.containsKey(monthYear)) {
+        groupedByStore[monthYear] = [];
       }
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-
-      Fluttertoast.showToast(
-        msg: "Error: ${e.toString()}",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
+      groupedByStore[monthYear]!.add(report);
     }
+
+    setState(() {
+      detailedReports = reports;
+      groupedReports = groupedByStore;
+      isLoading = false;
+    });
   }
 
   Future<void> generateAndDownloadPDF() async {

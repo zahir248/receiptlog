@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:fluttertoast/fluttertoast.dart';
 
 import '../views/dashboard.dart';
 import '../models/receipt.dart';
+import '../controllers/view_item.dart';
 
 class ViewItemsPage extends StatefulWidget {
   final Receipt receipt;
@@ -20,12 +19,12 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
   List<dynamic> filteredItems = []; // New list for filtered items
   bool isLoading = true;
   String errorMessage = '';
-  final TextEditingController _searchController = TextEditingController(); // Add search controller
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchReceiptItems();
+    loadReceiptItems();
     _searchController.addListener(_filterItems);
   }
 
@@ -35,7 +34,6 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
     super.dispose();
   }
 
-  // Add this method to filter items
   void _filterItems() {
     String searchTerm = _searchController.text.toLowerCase();
     setState(() {
@@ -50,197 +48,19 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
     });
   }
 
-  Future<void> _createItem({
-    required int receiptId,
-    required String itemName,
-    required int quantity,
-    required double price,
-  }) async {
+  Future<void> loadReceiptItems() async {
     try {
-      final requestBody = jsonEncode({
-        'item_name': itemName,
-        'quantity': quantity,
-        'price': price,
-      });
-
-      final url = 'http://192.168.0.42:8000/api/receipts/$receiptId/items';
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: requestBody,
-      );
-
-      if (response.statusCode == 201) {
-        // Refresh the items list
-        await fetchReceiptItems();
-
-        // Show success message using FlutterToast
-        Fluttertoast.showToast(
-          msg: "Item added successfully",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-      } else {
-        // Show error message using FlutterToast
-        Fluttertoast.showToast(
-          msg: "Failed to add item",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-      }
-    } catch (e) {
-      // Show error message for network issue
-      Fluttertoast.showToast(
-        msg: "Error: ${e.toString()}",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-    }
-  }
-
-  Future<void> fetchReceiptItems() async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://192.168.0.42:8000/api/receipt-items/${widget.receipt.id}'),
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          items = json.decode(response.body);
-          filteredItems = items; // Initialize filtered list
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          errorMessage = 'Failed to load items.';
-          isLoading = false;
-        });
-      }
-    } catch (e) {
+      final itemsData = await ViewItemController.fetchReceiptItems(widget.receipt.id);
       setState(() {
-        errorMessage = 'Error: $e';
+        items = itemsData;
+        filteredItems = items;
         isLoading = false;
       });
-    }
-  }
-
-  Future<void> _deleteItem(int receiptId, int itemId, String itemName) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('http://192.168.0.42:8000/api/receipts/$receiptId/items/$itemId'), // Modified URL to include receiptId
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        // Remove item from local list
-        setState(() {
-          items.removeWhere((item) => item['id'] == itemId);
-        });
-
-        // Show success toast
-        Fluttertoast.showToast(
-          msg: "Item deleted successfully",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
-      } else {
-        // Error handling
-        Fluttertoast.showToast(
-          msg: "Failed to delete item",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-        );
-      }
     } catch (e) {
-      Fluttertoast.showToast(
-        msg: "Error: ${e.toString()}",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
-    }
-  }
-
-  Future<void> _updateItem({
-    required int receiptId,
-    required int itemId,
-    required String itemName,
-    required int quantity,
-    required double price,
-  }) async {
-    try {
-      final requestBody = jsonEncode({
-        'item_name': itemName,
-        'quantity': quantity,
-        'price': price,
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
       });
-
-      final url = 'http://192.168.0.4:8000/api/receipts/$receiptId/items/$itemId';
-
-      final response = await http.put(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: requestBody,
-      );
-
-      if (response.statusCode == 200) {
-        // Show success message using FlutterToast
-        Fluttertoast.showToast(
-          msg: "Item updated successfully",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-      } else {
-        // Show error message using FlutterToast
-        Fluttertoast.showToast(
-          msg: "Failed to update item",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
-      }
-    } catch (e) {
-      // Show error message for network issue
-      Fluttertoast.showToast(
-        msg: "Error: ${e.toString()}",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
     }
   }
 
@@ -365,11 +185,12 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
                             }
 
                             // Create item via API
-                            await _createItem(
+                            await ViewItemController.createItem(
                               receiptId: widget.receipt.id,
                               itemName: itemNameController.text,
                               quantity: int.parse(itemQuantityController.text),
                               price: double.parse(itemPriceController.text),
+                              refreshItems: loadReceiptItems,
                             );
 
                             // Close the dialog
@@ -588,22 +409,18 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
                                             const SizedBox(width: 16.0),
                                             ElevatedButton(
                                               onPressed: () async {
-                                                // Update item via API
-                                                await _updateItem(
+                                                final success = await ViewItemController.updateItem(
                                                   receiptId: widget.receipt.id,
                                                   itemId: item['id'],
                                                   itemName: itemNameController.text,
                                                   quantity: int.parse(itemQuantityController.text),
                                                   price: double.parse(itemPriceController.text),
+                                                  refreshItems: loadReceiptItems,
                                                 );
 
-                                                // Close the dialog and bottom sheet
-                                                Navigator.of(context).pop(); // Close dialog
-
-                                                // Refresh the page by calling setState
-                                                setState(() {
-                                                  fetchReceiptItems();
-                                                });
+                                                if (success) {
+                                                  Navigator.of(context).pop(); // Close dialog
+                                                }
                                               },
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.blue,
@@ -683,15 +500,22 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
                                             const SizedBox(width: 16.0),
                                             ElevatedButton(
                                               onPressed: () async {
-                                                await _deleteItem(
-                                                  widget.receipt.id, // Pass the receiptId as the first argument
-                                                  item['id'],        // Pass the itemId as the second argument
-                                                  item['item_name'], // Pass the itemName as the third argument
+                                                final success = await ViewItemController.deleteItem(
+                                                  receiptId: widget.receipt.id,
+                                                  itemId: item['id'],
+                                                  itemName: item['item_name'],
+                                                  onDeleteSuccess: (deletedItemId) {
+                                                    setState(() {
+                                                      items.removeWhere((item) => item['id'] == deletedItemId);
+                                                    });
+                                                  },
                                                 );
-                                                Navigator.of(context).pop(); // Close dialog
-                                                Navigator.of(context).pop(); // Close bottom sheet after delete
-                                              },
 
+                                                if (success) {
+                                                  Navigator.of(context).pop(); // Close dialog
+                                                  Navigator.of(context).pop(); // Close bottom sheet
+                                                }
+                                              },
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: Colors.red,
                                                 foregroundColor: Colors.white,

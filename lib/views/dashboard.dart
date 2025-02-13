@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 import '../models/receipt.dart';
 import '../controllers/dashboard.dart';
@@ -54,46 +52,6 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       username = prefs.getString('username') ?? ''; // Default to empty string if no username is saved
     });
-  }
-
-  Future<void> deleteReceipt(int receiptId) async {
-    final url = Uri.parse('http://192.168.0.42:8000/api/receipts/$receiptId');
-
-    final response = await http.delete(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      // Successfully deleted
-      setState(() {
-        receipts.removeWhere((receipt) => receipt.id == receiptId); // Access `id` field here
-      });
-
-      // Show success message with FlutterToast
-      Fluttertoast.showToast(
-        msg: "Receipt deleted successfully",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-
-      // Navigate to DashboardPage after showing success message
-      await Future.delayed(const Duration(seconds: 1)); // Optional delay to allow the toast to be visible
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => DashboardPage()), // Navigate back to the dashboard
-      );
-    } else {
-      // Handle errors
-      print('Failed to delete receipt: ${response.body}');
-      // You could show an error dialog here if needed
-    }
   }
 
   @override
@@ -600,13 +558,25 @@ class _DashboardPageState extends State<DashboardPage> {
                                               const SizedBox(width: 16.0), // Add some space between the buttons
                                               ElevatedButton(
                                                 onPressed: () async {
-                                                  await deleteReceipt(receipt.id); // Access the 'id' property of the Receipt object
-                                                  Navigator.of(context).pop(); // Close dialog
-                                                  Navigator.of(context).pop(); // Close bottom sheet after delete
+                                                  final success = await DashboardController.deleteReceipt(
+                                                    context,
+                                                    receipt.id,
+                                                        (deletedReceiptId) {
+                                                      setState(() {
+                                                        receipts.removeWhere((r) => r.id == deletedReceiptId);
+                                                      });
+                                                    },
+                                                  );
+
+                                                  if (success) {
+                                                    // Close dialogs only if delete was successful
+                                                    Navigator.of(context).pop(); // Close dialog
+                                                    Navigator.of(context).pop(); // Close bottom sheet
+                                                  }
                                                 },
                                                 style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.red, // Red for "Delete"
-                                                  foregroundColor: Colors.white, // White text for contrast
+                                                  backgroundColor: Colors.red,
+                                                  foregroundColor: Colors.white,
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius: BorderRadius.circular(8.0),
                                                   ),
