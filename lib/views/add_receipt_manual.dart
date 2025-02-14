@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../controllers/add_receipt_manual.dart';
 import '../views/dashboard.dart';
@@ -20,22 +21,44 @@ class _AddReceiptPageState extends State<AddReceiptPage> {
   }
 
   void _submitForm() {
-    if (_formKey.currentState!.validate() && _selectedDate != null) {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedDate == null) {
+        Fluttertoast.showToast(
+          msg: "Please select a date",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+        return;
+      }
+
       _receiptController.submitReceipt(
         storeName: _nameController.text,
         date: _selectedDate!,
         onSuccess: () {
+          Fluttertoast.showToast(
+            msg: "Receipt added successfully",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+          );
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => DashboardPage()),
           );
         },
         onError: (message) {
-          print(message); // Debugging log
+          Fluttertoast.showToast(
+            msg: message,
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+          );
         },
       );
-    } else {
-      print("Validation failed or date not selected"); // Debug log
     }
   }
 
@@ -102,50 +125,78 @@ class _AddReceiptPageState extends State<AddReceiptPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            validator: (value) =>
-                            value!.isEmpty ? 'Enter a store name' : null,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                Fluttertoast.showToast(
+                                  msg: "Store name is required",
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  textColor: Colors.white,
+                                );
+                                return 'Enter a store name';
+                              }
+                              if (value.length > 255) {
+                                Fluttertoast.showToast(
+                                  msg: "Store name must not exceed 255 characters",
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  textColor: Colors.white,
+                                );
+                                return 'Store name must not exceed 255 characters';
+                              }
+                              return null;
+                            },
                           ),
                           SizedBox(height: 16),
-                          GestureDetector(
-                            onTap: () async {
-                              DateTime? pickedDate = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2101),
-                              );
-                              if (pickedDate != null) {
-                                setState(() {
-                                  _selectedDate = pickedDate;
-                                });
-                              }
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 14, horizontal: 16),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _selectedDate == null
-                                        ? 'Select Date'
-                                        : _selectedDate!
-                                        .toLocal()
-                                        .toString()
-                                        .split(' ')[0],
-                                    style: TextStyle(fontSize: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: () async {
+                                  DateTime? pickedDate = await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now(),
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime(2101),
+                                  );
+                                  if (pickedDate != null) {
+                                    setState(() {
+                                      _selectedDate = pickedDate;
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  Icon(Icons.calendar_today,
-                                      color: Colors.black54),
-                                ],
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _selectedDate == null
+                                            ? 'Select Date'
+                                            : _selectedDate!.toLocal().toString().split(' ')[0],
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                      Icon(Icons.calendar_today, color: Colors.black54),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (_selectedDate == null)
+                                Padding(
+                                  padding: EdgeInsets.only(top: 5, left: 5),
+                                  child: Text(
+                                    'Date is required',
+                                    style: TextStyle(color: Colors.red, fontSize: 14),
+                                  ),
+                                ),
+                            ],
                           ),
                           SizedBox(height: 24),
                           SizedBox(

@@ -170,10 +170,12 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
                         const SizedBox(width: 16.0),
                         ElevatedButton(
                           onPressed: () async {
-                            // Validate inputs
-                            if (itemNameController.text.isEmpty ||
-                                itemQuantityController.text.isEmpty ||
-                                itemPriceController.text.isEmpty) {
+                            String itemName = itemNameController.text.trim();
+                            String itemQuantity = itemQuantityController.text.trim();
+                            String itemPrice = itemPriceController.text.trim();
+
+                            // 1️⃣ Check if any field is empty
+                            if (itemName.isEmpty || itemQuantity.isEmpty || itemPrice.isEmpty) {
                               Fluttertoast.showToast(
                                 msg: "Please fill in all fields",
                                 toastLength: Toast.LENGTH_SHORT,
@@ -184,12 +186,50 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
                               return;
                             }
 
-                            // Create item via API
+                            // 2️⃣ Validate item_name (max length 255)
+                            if (itemName.length > 255) {
+                              Fluttertoast.showToast(
+                                msg: "Item name must not exceed 255 characters",
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.BOTTOM,
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                              );
+                              return;
+                            }
+
+                            // 3️⃣ Validate quantity (must be an integer, min: 1)
+                            int? quantity = int.tryParse(itemQuantity);
+                            if (quantity == null || quantity < 1) {
+                              Fluttertoast.showToast(
+                                msg: "Quantity must be a valid integer greater than 0",
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.BOTTOM,
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                              );
+                              return;
+                            }
+
+                            // 4️⃣ Validate price (must be numeric, min: 0)
+                            double? price = double.tryParse(itemPrice);
+                            if (price == null || price < 0) {
+                              Fluttertoast.showToast(
+                                msg: "Price must be a valid number and at least RM 0",
+                                toastLength: Toast.LENGTH_SHORT,
+                                gravity: ToastGravity.BOTTOM,
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                              );
+                              return;
+                            }
+
+                            // ✅ If validation passes, send data to API
                             await ViewItemController.createItem(
                               receiptId: widget.receipt.id,
-                              itemName: itemNameController.text,
-                              quantity: int.parse(itemQuantityController.text),
-                              price: double.parse(itemPriceController.text),
+                              itemName: itemName,
+                              quantity: quantity,
+                              price: price,
                               refreshItems: loadReceiptItems,
                             );
 
@@ -214,7 +254,6 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
           );
         },
       ),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -409,12 +448,67 @@ class _ViewItemsPageState extends State<ViewItemsPage> {
                                             const SizedBox(width: 16.0),
                                             ElevatedButton(
                                               onPressed: () async {
+                                                String itemName = itemNameController.text.trim();
+                                                String itemQuantity = itemQuantityController.text.trim();
+                                                String itemPrice = itemPriceController.text.trim();
+
+                                                // 1️⃣ Check if any field is empty
+                                                if (itemName.isEmpty || itemQuantity.isEmpty || itemPrice.isEmpty) {
+                                                  Fluttertoast.showToast(
+                                                    msg: "Please fill in all fields",
+                                                    toastLength: Toast.LENGTH_SHORT,
+                                                    gravity: ToastGravity.BOTTOM,
+                                                    backgroundColor: Colors.red,
+                                                    textColor: Colors.white,
+                                                  );
+                                                  return;
+                                                }
+
+                                                // 2️⃣ Validate item_name (max length 255)
+                                                if (itemName.length > 255) {
+                                                  Fluttertoast.showToast(
+                                                    msg: "Item name must not exceed 255 characters",
+                                                    toastLength: Toast.LENGTH_SHORT,
+                                                    gravity: ToastGravity.BOTTOM,
+                                                    backgroundColor: Colors.red,
+                                                    textColor: Colors.white,
+                                                  );
+                                                  return;
+                                                }
+
+                                                // 3️⃣ Validate quantity (must be an integer, min: 1)
+                                                int? quantity = int.tryParse(itemQuantity);
+                                                if (quantity == null || quantity < 1) {
+                                                  Fluttertoast.showToast(
+                                                    msg: "Quantity must be a valid integer greater than 0",
+                                                    toastLength: Toast.LENGTH_SHORT,
+                                                    gravity: ToastGravity.BOTTOM,
+                                                    backgroundColor: Colors.red,
+                                                    textColor: Colors.white,
+                                                  );
+                                                  return;
+                                                }
+
+                                                // 4️⃣ Validate price (must be numeric, min: 0)
+                                                double? price = double.tryParse(itemPrice);
+                                                if (price == null || price < 0) {
+                                                  Fluttertoast.showToast(
+                                                    msg: "Price must be a valid number and at least RM0",
+                                                    toastLength: Toast.LENGTH_SHORT,
+                                                    gravity: ToastGravity.BOTTOM,
+                                                    backgroundColor: Colors.red,
+                                                    textColor: Colors.white,
+                                                  );
+                                                  return;
+                                                }
+
+                                                // ✅ If validation passes, send data to API
                                                 final success = await ViewItemController.updateItem(
                                                   receiptId: widget.receipt.id,
                                                   itemId: item['id'],
-                                                  itemName: itemNameController.text,
-                                                  quantity: int.parse(itemQuantityController.text),
-                                                  price: double.parse(itemPriceController.text),
+                                                  itemName: itemName,
+                                                  quantity: quantity,
+                                                  price: price,
                                                   refreshItems: loadReceiptItems,
                                                 );
 
