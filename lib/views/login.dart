@@ -166,6 +166,173 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true, // Allows full-height modal if needed
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            backgroundColor: Colors.white,
+            builder: (context) => _buildSystemDetailsModal(),
+          );
+        },
+        backgroundColor: Colors.green, // Matching theme color
+        child: const Icon(Icons.info, color: Colors.white), // Info icon
+      ),
+    );
+  }
+
+  Widget _buildSystemDetailsModal() {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6, // Adjust modal height
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      builder: (context, scrollController) {
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Close button (X)
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.black),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+                // System Name
+                const Center(
+                  child: Text(
+                    "Grocery Receipt Record Management System",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Overview
+                const Text(
+                  "Overview",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "Welcome to ",
+                      ),
+                      TextSpan(
+                        text: "SCAN",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
+                        text: " – A system that helps you track and manage your grocery expenses. Store receipts, track purchases, and generate reports effortlessly with secure cloud storage.",
+                      ),
+                    ],
+                  ),
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 15),
+                // Key Features
+                const Text(
+                  "Key Features",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      leading: Icon(Icons.receipt, color: Colors.green),
+                      title: Text.rich(
+                        TextSpan(
+                          text: "Receipt Management",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      subtitle: Text("• Create, update, and delete receipts.\n"
+                          "• Store details like store name, total amount, and date.\n "
+                          "• Link receipts to a specific user."),
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.list, color: Colors.green),
+                      title: Text.rich(
+                        TextSpan(
+                          text: "Receipt Item Management",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      subtitle: Text(
+                        "• Add, update, and delete items in a receipt.\n"
+                            "• Track item details such as name, quantity, and price.\n"
+                            "• Automatically update the receipt’s total amount when items change.",
+                      ),
+                    ),
+                    ListTile(
+                      leading: Icon(Icons.picture_as_pdf, color: Colors.green),
+                      title: Text.rich(
+                        TextSpan(
+                          text: "Reporting",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      subtitle: Text("• Generate detailed receipts with itemized lists in PDF format.\n "
+                          "• View receipts sorted by date for better organization."),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                // Benefits
+                const Text(
+                  "Benefits",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  "✔ Easily track and organize receipts and items\n"
+                      "✔ Automatic updates to receipt totals when changes are made\n"
+                      "✔ Create detailed reports to understand spending habits",
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 15),
+                // Getting Started
+                const Text(
+                  "Getting Started",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  "1. Register for an account using your email.\n"
+                      "2. Add your first receipt to the system.\n"
+                      "3. Include items in your receipt for detailed tracking.\n"
+                      "4. View, update, or manage your receipts easily.\n"
+                      "5. Generate reports to analyze your spending.\n"
+                      "6. Access your receipts and records anytime, anywhere.",
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 20),
+                // Close Button
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text("Close"),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
