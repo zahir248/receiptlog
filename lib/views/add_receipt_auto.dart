@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:math' show min;
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart' show rootBundle, ByteData;
 
 import '../views/dashboard.dart';
 import '../models/receipt.dart';
@@ -495,7 +497,110 @@ class _AddReceiptPageState extends State<AddReceiptAutoPage> {
                 _pickImage(ImageSource.gallery);
               },
             ),
+            ListTile(
+              leading: Icon(Icons.image, color: Colors.orange),
+              title: Text("Use Sample Image"),
+              onTap: () {
+                Navigator.pop(context);
+                _showSampleSelectionDialog();
+              },
+            ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<void> _useSampleImage(String sampleNumber) async {
+    try {
+      // Get the temporary directory
+      final directory = await getTemporaryDirectory();
+
+      // Define the path for the temporary file
+      final tempPath = '${directory.path}/sample_receipt.jpg';
+
+      // Copy the asset to a temporary file
+      ByteData data = await rootBundle.load('assets/receipt$sampleNumber.jpg');
+      List<int> bytes = data.buffer.asUint8List();
+      await File(tempPath).writeAsBytes(bytes);
+
+      setState(() {
+        _receiptImage = File(tempPath);
+        _isProcessing = true;
+      });
+
+      // Process the sample image using the existing OCR functionality
+      await _extractTextFromImage();
+
+    } catch (e) {
+      print('Error loading sample image: $e');
+      Fluttertoast.showToast(
+        msg: "Error loading sample image",
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    }
+  }
+
+  void _showSampleSelectionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Center(
+            child: Text(
+              "Select Sample Receipt",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.receipt_long, color: Colors.blue),
+                title: Text("Sample Receipt 1"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _useSampleImage('1');
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.receipt_long, color: Colors.green),
+                title: Text("Sample Receipt 2"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _useSampleImage('2');
+                },
+              ),
+              SizedBox(height: 10), // Spacing before button
+              Center(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red, // Red background
+                    foregroundColor: Colors.white, // White text
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10), // Rounded corners
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12), // Button size
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

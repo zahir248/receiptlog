@@ -78,6 +78,8 @@ flutter:
      - assets/scan.png
      - assets/fonts/OpenSans-Regular.ttf
      - assets/fonts/OpenSans-Bold.ttf
+     - assets/receipt1.jpg
+     - assets/receipt2.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
