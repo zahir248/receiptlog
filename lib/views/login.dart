@@ -12,8 +12,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  // Pre-filled test credentials
+  final TextEditingController emailController = TextEditingController(text: "demo@example.com");
+  final TextEditingController passwordController = TextEditingController(text: "demo123");
 
   // State variable to toggle password visibility
   bool _isPasswordVisible = false;
@@ -135,7 +136,29 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
+                // Test credentials message
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.grey, size: 16),
+                      SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          "Using test credentials (demo@example.com / demo123)",
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
                 // "Don't have an account?" and "Register here" link closely
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -185,6 +208,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildSystemDetailsModal() {
+    // Modal content remains unchanged
     return DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.6, // Adjust modal height
@@ -271,7 +295,7 @@ class _LoginPageState extends State<LoginPage> {
                       subtitle: Text(
                         "• Add, update, and delete items in a receipt.\n"
                             "• Track item details such as name, quantity, and price.\n"
-                            "• Automatically update the receipt’s total amount when items change.",
+                            "• Automatically update the receipt's total amount when items change.",
                       ),
                     ),
                     ListTile(
